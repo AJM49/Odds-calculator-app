@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Odds Calculator</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="container">
+    <h1>Odds Calculator</h1>
+    
+    <label>Bet Amount ($)</label>
+    <input type="number" id="betAmount" placeholder="100" />
+
+    <label>Odds Type</label>
+    <select id="oddsType">
+      <option value="fractional">Fractional (e.g. 9/5)</option>
+      <option value="decimal">Decimal (e.g. 2.80)</option>
+      <option value="moneyline">Moneyline (e.g. +180)</option>
+    </select>
+
+    <label>Enter Odds</label>
+    <input type="text" id="oddsInput" placeholder="9/5 or 2.8 or +180" />
+
+    <button onclick="calculateOdds()">Calculate</button>
+
+    <div id="results"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
