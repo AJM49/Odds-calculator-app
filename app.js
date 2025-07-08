@@ -1,4 +1,5 @@
 function calculateOdds() {
+  document.title = `💰 ${oddsType.toUpperCase()} Bet Return`;
   const betAmount = parseFloat(document.getElementById("betAmount").value);
   const oddsType = document.getElementById("oddsType").value;
   const oddsInput = document.getElementById("oddsInput").value.trim();
