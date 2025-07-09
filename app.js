@@ -1,12 +1,63 @@
-// Constants for validation
+// Validation constants
 const MIN_BET = 0.5;
 const MAX_BET = 1000000;
 
-// Main calculation function
+// Utility: Compute GCD for fraction reduction
+function gcd(a, b) {
+  return b ? gcd(b, a % b) : a;
+}
+
+// Convert decimal odds to a reduced fractional string
+function decimalToFraction(decimalOdds) {
+  const fraction = decimalOdds - 1;
+  const precision = 100;                    // denominator up to 100
+  let num = Math.round(fraction * precision);
+  let den = precision;
+  const divisor = gcd(num, den);
+  num /= divisor;
+  den /= divisor;
+  return `${num}/${den}`;
+}
+
+// Convert decimal odds to moneyline integer
+function decimalToMoneyline(decimalOdds) {
+  if (decimalOdds >= 2) {
+    return `+${Math.round((decimalOdds - 1) * 100)}`;
+  } else {
+    return `-${Math.round(100 / (decimalOdds - 1))}`;
+  }
+}
+
+// Parse any input into decimal odds
+function parseToDecimal(oddsType, oddsInput) {
+  let decimal;
+  switch (oddsType) {
+    case "fractional": {
+      const [n, d] = oddsInput.split("/").map(Number);
+      decimal = 1 + (n / d);
+      break;
+    }
+    case "decimal": {
+      decimal = parseFloat(oddsInput);
+      break;
+    }
+    case "moneyline": {
+      const ml = parseInt(oddsInput, 10);
+      if (ml > 0) {
+        decimal = 1 + ml / 100;
+      } else {
+        decimal = 1 + 100 / Math.abs(ml);
+      }
+      break;
+    }
+  }
+  return decimal;
+}
+
+// Main function
 function calculateOdds() {
-  // Grab inputs
   const betAmount = parseFloat(document.getElementById("betAmount").value);
-  const oddsType = document.getElementById("oddsType").value;
+  const oddsType  = document.getElementById("oddsType").value;
   const oddsInput = document.getElementById("oddsInput").value.trim();
 
   // Validation
@@ -19,62 +70,41 @@ function calculateOdds() {
     return;
   }
 
-  let profit = 0;
-  let totalReturn = 0;
-
-  // Calculation by odds type
-  switch (oddsType) {
-    case "fractional": {
-      const parts = oddsInput.split("/");
-      const numerator = parseFloat(parts[0]);
-      const denominator = parseFloat(parts[1]);
-      if (!numerator || !denominator) {
-        alert("Invalid fractional odds. Use format like 9/5.");
-        return;
-      }
-      profit = (betAmount * numerator) / denominator;
-      break;
-    }
-    case "decimal": {
-      const decimal = parseFloat(oddsInput);
-      if (isNaN(decimal) || decimal <= 1) {
-        alert("Invalid decimal odds. Must be greater than 1 (e.g. 2.8).");
-        return;
-      }
-      profit = betAmount * (decimal - 1);
-      break;
-    }
-    case "moneyline": {
-      const ml = parseInt(oddsInput, 10);
-      if (isNaN(ml) || ml === 0) {
-        alert("Invalid moneyline odds. Use + or - values, e.g. +180 or -150.");
-        return;
-      }
-      if (ml > 0) {
-        profit = (betAmount * ml) / 100;
-      } else {
-        profit = (betAmount * 100) / Math.abs(ml);
-      }
-      break;
-    }
-    default:
-      alert("Unknown odds type.");
-      return;
+  // Convert input odds to decimal
+  let decimalOdds;
+  try {
+    decimalOdds = parseToDecimal(oddsType, oddsInput);
+    if (isNaN(decimalOdds) || decimalOdds <= 1) throw Error();
+  } catch {
+    alert("Invalid odds format—check your input.");
+    return;
   }
 
-  totalReturn = betAmount + profit;
+  // Calculate profit & return
+  const profit      = betAmount * (decimalOdds - 1);
+  const totalReturn = betAmount + profit;
 
-  // Update page title dynamically
-  document.title = `💰 ${oddsType.charAt(0).toUpperCase() + oddsType.slice(1)} Return`;
-
-  // Display results
+  // Display profit & return
   document.getElementById("results").innerHTML = `
     <p><strong>Profit:</strong> $${profit.toFixed(2)}</p>
     <p><strong>Total Return:</strong> $${totalReturn.toFixed(2)}</p>
   `;
+
+  // Display converted odds
+  const frac = decimalToFraction(decimalOdds);
+  const ml   = decimalToMoneyline(decimalOdds);
+  document.getElementById("conversion").innerHTML = `
+    <h3>Equivalent Odds</h3>
+    <p><strong>Fractional:</strong> ${frac}</p>
+    <p><strong>Decimal:</strong> ${decimalOdds.toFixed(2)}</p>
+    <p><strong>Moneyline:</strong> ${ml}</p>
+  `;
+
+  // Dynamic tab title
+  document.title = `💰 ${decimalOdds.toFixed(2)} Odds Return`;
 }
 
-// Attach event listener once DOM is loaded
+// Wire up button
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("calcBtn").addEventListener("click", calculateOdds);
 });
