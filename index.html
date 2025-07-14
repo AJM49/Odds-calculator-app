@@ -9,10 +9,6 @@
 </head>
 <body>
   <div class="container">
-    <div style="text-align:center; margin-bottom:15px;">
-  <img src="logo.png" alt="AJM Odds Logo" style="height:150px;" />
-</div>
-
     <h1>Odds Calculator</h1>
     
     <label>Bet Amount ($)</label>
@@ -27,6 +23,28 @@
 
     <label>Odds Type</label>
     <select id="oddsType">
+      <option value="fractional">Fractional (e.g. 9/5)</option>
+      <option value="decimal">Decimal (e.g. 2.80)</option>
+      <option value="moneyline">Moneyline (e.g. +180 or -150)</option>
+    </select>
+
+    <label>Enter Odds</label>
+    <input type="text" id="oddsInput" placeholder="9/5 or 2.8 or +180" />
+
+    <button id="calcBtn">Calculate</button>
+
+    <div id="results">
+      <!-- Profit & return go here -->
+    </div>
+    <div id="conversion">
+      <!-- Converted odds will be injected here -->
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
       <option value="fractional">Fractional (e.g. 9/5)</option>
       <option value="decimal">Decimal (e.g. 2.80)</option>
       <option value="moneyline">Moneyline (e.g. +180 or -150)</option>
