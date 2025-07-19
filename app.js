@@ -164,3 +164,34 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("addLeg").addEventListener("click", addParlayLeg);
   document.getElementById("calcParlay").addEventListener("click", calculateParlay);
 });
+
+function saveBetToHistory(bet) {
+  let history = JSON.parse(localStorage.getItem("betHistory")) || [];
+  history.unshift(bet); // Add newest at top
+  if (history.length > 10) history.pop(); // Max 10 entries
+  localStorage.setItem("betHistory", JSON.stringify(history));
+  displayBetHistory();
+}
+
+function displayBetHistory() {
+  const history = JSON.parse(localStorage.getItem("betHistory")) || [];
+  const container = document.getElementById("historyContainer");
+
+  if (history.length === 0) {
+    container.innerHTML = "<p>No bets saved yet.</p>";
+    return;
+  }
+
+  container.innerHTML = "<ul>" + history.map(bet => `
+    <li>
+      Bet $${bet.amount.toFixed(2)} @ ${bet.odds} (${bet.type}) → 
+      Return: $${bet.return.toFixed(2)}, Profit: $${bet.profit.toFixed(2)}
+    </li>`).join("") + "</ul>";
+}
+
+document.getElementById("clearHistory").addEventListener("click", () => {
+  localStorage.removeItem("betHistory");
+  displayBetHistory();
+});
+
+window.addEventListener("load", displayBetHistory);
