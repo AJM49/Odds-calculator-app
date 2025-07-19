@@ -65,6 +65,10 @@ function calculateOdds() {
     alert("Invalid odds format.");
     return;
   }
+gtag('event', 'odds_type_selected', {
+  'event_category': 'User Behavior',
+  'event_label': oddsType,
+});
 
   const profit = betAmount * (decimalOdds - 1);
   const totalReturn = betAmount + profit;
