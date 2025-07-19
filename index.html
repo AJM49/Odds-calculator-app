@@ -1,29 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-P4W0XTK6RV"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-P4W0XTK6RV');
-</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>🐎 AJM Odds Calculator</title>
+
+  <!-- SEO & Open Graph -->
+  <meta name="description" content="Free horse racing and parlay betting calculator with instant results. Convert odds, calculate payouts, and subscribe for updates." />
+  <meta name="keywords" content="horse racing, odds calculator, parlay calculator, betting app" />
+  <meta name="author" content="AJM49" />
+  <meta property="og:title" content="AJM Odds Calculator" />
+  <meta property="og:description" content="Free horse racing and parlay betting calculator with instant results." />
+  <meta property="og:image" content="https://ajm49.github.io/odds-calculator-app/logo.png" />
+  <meta property="og:url" content="https://ajm49.github.io/odds-calculator-app/" />
+  <meta name="twitter:card" content="summary_large_image" />
+
   <link rel="stylesheet" href="style.css"/>
   <link rel="icon" href="favicon.ico" type="image/x-icon"/>
-  <meta name="description" content="Calculate horse racing odds and parlays easily. Convert between fractional, decimal, and moneyline formats.">
-<meta name="keywords" content="horse racing, odds calculator, parlay calculator, betting app">
-<meta name="author" content="AJM49">
-<meta property="og:title" content="AJM Odds Calculator" />
-<meta property="og:description" content="Free horse racing and parlay betting calculator with instant results." />
-<meta property="og:image" content="https://ajm49.github.io/odds-calculator-app/logo.png" />
-<meta property="og:url" content="https://ajm49.github.io/odds-calculator-app/" />
-<meta name="twitter:card" content="summary_large_image" />
-
 </head>
 <body>
   <div class="container">
@@ -32,6 +25,7 @@
     </div>
     <h1>Odds Calculator</h1>
 
+    <!-- Basic Odds -->
     <label>Bet Amount ($)</label>
     <input type="number" id="betAmount" placeholder="Enter any amount (min $0.50)" min="0.5" max="1000000" step="0.01"/>
 
@@ -50,6 +44,7 @@
     <div id="results"></div>
     <div id="conversion"></div>
 
+    <!-- Parlay Section -->
     <h2 style="margin-top: 30px;">🎯 Parlay Calculator</h2>
     <label>Bet Amount ($)</label>
     <input type="number" id="parlayBet" placeholder="Enter bet amount (min $0.50)" min="0.5" max="1000000" step="0.01"/>
@@ -57,24 +52,26 @@
     <button id="addLeg">➕ Add Leg</button>
     <button id="calcParlay">Calculate Parlay</button>
     <div id="parlayResults"></div>
+
+    <!-- Newsletter Signup -->
+    <hr style="margin: 30px 0;" />
+    <h3 style="text-align:center;">📬 Subscribe for Updates</h3>
+    <form
+      action="https://buttondown.com/api/emails/embed-subscribe/albemurp"
+      method="post"
+      target="popupwindow"
+      onsubmit="window.open('https://buttondown.com/albemurp', 'popupwindow')"
+      class="embeddable-buttondown-form"
+    >
+      <label for="bd-email">Enter your email</label>
+      <input type="email" name="email" id="bd-email" placeholder="you@example.com" />
+      <input type="submit" value="Subscribe" />
+      <p style="text-align:center;">
+        <a href="https://buttondown.com/refer/albemurp" target="_blank">Powered by Buttondown</a>
+      </p>
+    </form>
   </div>
 
   <script src="app.js"></script>
-  
 </body>
 </html>
- <form
-  action="https://buttondown.com/api/emails/embed-subscribe/albemurp"
-  method="post"
-  target="popupwindow"
-  onsubmit="window.open('https://buttondown.com/albemurp', 'popupwindow')"
-  class="embeddable-buttondown-form"
->
-  <label for="bd-email">Enter your email</label>
-  <input type="email" name="email" id="bd-email" />
-  
-  <input type="submit" value="Subscribe" />
-  <p>
-    <a href="https://buttondown.com/refer/albemurp" target="_blank">Powered by Buttondown.</a>
-  </p>
-</form>
