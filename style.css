@@ -33,7 +33,7 @@ select {
 }
 
 button {
-  margin-top: 20px;
+  margin-top: 15px;
   width: 100%;
   padding: 10px;
   background-color: #007bff;
@@ -46,13 +46,6 @@ button {
 
 button:hover {
   background-color: #0056b3;
-}
-button:nth-of-type(2) {
-  background-color: #28a745;
-}
-
-button:nth-of-type(2):hover {
-  background-color: #218838;
 }
 
 #results, #conversion {
@@ -79,15 +72,36 @@ button:nth-of-type(2):hover {
 }
 
 #clearHistory {
-  margin-top: 10px;
   background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
 }
 
 #clearHistory:hover {
   background-color: #c82333;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+body.dark-mode .container {
+  background-color: #1e1e1e;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode input,
+body.dark-mode select {
+  background-color: #2a2a2a;
+  color: #ffffff;
+  border: 1px solid #444;
+}
+
+body.dark-mode button {
+  background-color: #333;
+  color: #fff;
+}
+
+body.dark-mode button:hover {
+  background-color: #555;
 }
