@@ -30,6 +30,18 @@ function calculateOdds() {
   const betAmount = parseFloat(document.getElementById("betAmount").value);
   const oddsType = document.getElementById("oddsType").value;
   const oddsInput = document.getElementById("oddsInput").value.trim();
+  const betMode = document.getElementById("betMode").value;
+
+  const descriptions = {
+    win: "🏆 Horse must finish 1st",
+    place: "🥈 Horse must finish 1st or 2nd",
+    show: "🥉 Horse must finish 1st, 2nd, or 3rd",
+    exacta: "🔢 Pick 1st and 2nd in exact order",
+    trifecta: "🔁 Pick 1st, 2nd, and 3rd in order",
+    superfecta: "🎯 Pick 1st through 4th in exact order"
+  };
+
+  document.getElementById("betDescription").innerText = descriptions[betMode];
 
   if (isNaN(betAmount) || betAmount < MIN_BET) {
     alert(`Please enter a bet of at least $${MIN_BET.toFixed(2)}.`);
@@ -45,10 +57,35 @@ function calculateOdds() {
     return;
   }
 
-  const profit = betAmount * (decimalOdds - 1);
-  const totalReturn = betAmount + profit;
+  let profit, totalReturn;
+
+  switch (betMode) {
+    case "win":
+      profit = betAmount * (decimalOdds - 1);
+      break;
+    case "place":
+      profit = betAmount * ((decimalOdds - 1) / 2);
+      break;
+    case "show":
+      profit = betAmount * ((decimalOdds - 1) / 3);
+      break;
+    case "exacta":
+      profit = betAmount * 5;
+      break;
+    case "trifecta":
+      profit = betAmount * 25;
+      break;
+    case "superfecta":
+      profit = betAmount * 100;
+      break;
+    default:
+      profit = 0;
+  }
+
+  totalReturn = betAmount + profit;
 
   document.getElementById("results").innerHTML = `
+    <p><strong>Bet Type:</strong> ${betMode.toUpperCase()}</p>
     <p><strong>Profit:</strong> $${profit.toFixed(2)}</p>
     <p><strong>Total Return:</strong> $${totalReturn.toFixed(2)}</p>
   `;
@@ -64,11 +101,11 @@ function calculateOdds() {
 
   document.title = `💰 ${decimalOdds.toFixed(2)} Odds Return`;
 
-  // Save bet to history
   saveBetToHistory({
     amount: betAmount,
     odds: oddsInput,
     type: oddsType,
+    mode: betMode,
     return: totalReturn,
     profit: profit
   });
@@ -93,7 +130,7 @@ function displayBetHistory() {
 
   container.innerHTML = "<ul>" + history.map(bet => `
     <li>
-      Bet $${bet.amount.toFixed(2)} @ ${bet.odds} (${bet.type}) → 
+      $${bet.amount.toFixed(2)} on ${bet.mode.toUpperCase()} @ ${bet.odds} (${bet.type}) → 
       Return: $${bet.return.toFixed(2)}, Profit: $${bet.profit.toFixed(2)}
     </li>`).join("") + "</ul>";
 }
@@ -103,22 +140,52 @@ document.getElementById("clearHistory").addEventListener("click", () => {
   displayBetHistory();
 });
 
-window.addEventListener("load", displayBetHistory);
 function loadFromURLParams() {
   const params = new URLSearchParams(window.location.search);
   const bet = parseFloat(params.get("bet"));
   const odds = params.get("odds");
   const type = params.get("type");
+  const mode = params.get("mode");
 
   if (bet && odds && type) {
-    const betInput = document.getElementById("betAmount");
-    const oddsInput = document.getElementById("oddsInput");
-    const typeInput = document.getElementById("oddsType");
-
-    betInput.value = bet;
-    oddsInput.value = odds;
-    typeInput.value = type;
-
+    document.getElementById("betAmount").value = bet;
+    document.getElementById("oddsInput").value = odds;
+    document.getElementById("oddsType").value = type;
+    if (mode) document.getElementById("betMode").value = mode;
     calculateOdds();
   }
 }
+
+function copyShareLink() {
+  const bet = document.getElementById("betAmount").value;
+  const odds = document.getElementById("oddsInput").value;
+  const type = document.getElementById("oddsType").value;
+  const mode = document.getElementById("betMode").value;
+
+  const baseUrl = window.location.origin + window.location.pathname;
+  const shareURL = `${baseUrl}?bet=${bet}&odds=${encodeURIComponent(odds)}&type=${type}&mode=${mode}`;
+
+  navigator.clipboard.writeText(shareURL)
+    .then(() => alert("Link copied to clipboard!"))
+    .catch(() => alert("Failed to copy link."));
+}
+
+function applyTheme(theme) {
+  document.body.classList.toggle("dark-mode", theme === "dark");
+}
+
+function toggleTheme() {
+  const currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
+  const newTheme = currentTheme === "dark" ? "light" : "dark";
+  applyTheme(newTheme);
+  localStorage.setItem("theme", newTheme);
+}
+
+document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+
+window.addEventListener("load", () => {
+  const savedTheme = localStorage.getItem("theme") || "light";
+  applyTheme(savedTheme);
+  displayBetHistory();
+  loadFromURLParams();
+});
