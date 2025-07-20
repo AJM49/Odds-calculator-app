@@ -104,3 +104,21 @@ document.getElementById("clearHistory").addEventListener("click", () => {
 });
 
 window.addEventListener("load", displayBetHistory);
+function loadFromURLParams() {
+  const params = new URLSearchParams(window.location.search);
+  const bet = parseFloat(params.get("bet"));
+  const odds = params.get("odds");
+  const type = params.get("type");
+
+  if (bet && odds && type) {
+    const betInput = document.getElementById("betAmount");
+    const oddsInput = document.getElementById("oddsInput");
+    const typeInput = document.getElementById("oddsType");
+
+    betInput.value = bet;
+    oddsInput.value = odds;
+    typeInput.value = type;
+
+    calculateOdds();
+  }
+}
