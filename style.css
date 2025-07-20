@@ -47,6 +47,13 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+button:nth-of-type(2) {
+  background-color: #28a745;
+}
+
+button:nth-of-type(2):hover {
+  background-color: #218838;
+}
 
 #results, #conversion {
   margin-top: 20px;
