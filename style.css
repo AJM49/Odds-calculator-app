@@ -105,3 +105,17 @@ body.dark-mode button {
 body.dark-mode button:hover {
   background-color: #555;
 }
+.share-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  margin-top: 10px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.share-button:hover {
+  background-color: #45a049;
+}
