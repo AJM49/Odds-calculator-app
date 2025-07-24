@@ -215,4 +215,25 @@ window.addEventListener("load", () => {
   applyTheme(savedTheme);
   displayBetHistory();
   loadFromURLParams();
-});
+
+  // Fetch real-time odds using Horse Racing Labs API
+    async function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
+      try {
+        const response = await fetch(`https://api.horseracinglabs.com/v2/odds/tracks/${trackCode}/date/${date}?api-key=YOUR_API_KEY`);
+        const data = await response.json();
+        console.log('Live Payout Data:', data);
+        alert('✅ Live odds fetched. Check console for details.');
+      } catch (error) {
+        console.error('❌ Failed to fetch payout data:', error);
+        alert('Failed to load payout data.');
+      }
+    }
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('✅ Service Worker registered:', reg))
+          .catch(err => console.error('❌ Service Worker error:', err));
+      });
+    }
