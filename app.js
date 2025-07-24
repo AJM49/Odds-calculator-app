@@ -25,6 +25,15 @@ function decimalToMoneyline(decimal) {
     ? `+${Math.round(profit * 100)}`
     : `-${Math.round(100 / profit)}`;
 }
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log('✅ Service Worker registered:', reg))
+      .catch(err => console.error('❌ Service Worker error:', err));
+  });
+}
+
+
 
 function calculateOdds() {
   const betAmount = parseFloat(document.getElementById("betAmount").value);
