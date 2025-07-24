@@ -54,5 +54,11 @@
   </div>
 
   <script src="app.js"></script>
+  function fetchPayoutDataFromInputs() {
+  const track = document.getElementById('trackInput').value;
+  const date = document.getElementById('raceDate').value;
+  fetchPayoutData(track, date);
+}
+
 </body>
 </html>
