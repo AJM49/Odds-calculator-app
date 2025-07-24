@@ -11,56 +11,96 @@
 
 </head>
 <body>
-  <div class="container">
-    <h1>🎯 Odds Calculator</h1>
+  <h1>Horse Odds Calculator</h1>
 
-    <button id="themeToggle">🌙 Toggle Dark Mode</button>
+  <!-- 🏇 Bet type dropdown -->
+  <label for="betMode">Select Bet Type:</label>
+  <select id="betMode">
+    <option value="win">Win</option>
+    <option value="place">Place</option>
+    <option value="show">Show</option>
+  </select>
 
-    <label for="betAmount">Bet Amount ($):</label>
-    <input type="number" id="betAmount" min="0.5" step="0.01" value="2.00" />
+  <!-- 💰 Bet amount input -->
+  <label for="betAmount">Bet Amount ($):</label>
+  <input type="number" id="betAmount" min="0.5" step="0.1" placeholder="e.g. 2.00">
 
-    <label for="betMode">Bet Type:</label>
-    <select id="betMode">
-      <option value="win">Win</option>
-      <option value="place">Place</option>
-      <option value="show">Show</option>
-      <option value="exacta">Exacta</option>
-      <option value="trifecta">Trifecta</option>
-      <option value="superfecta">Superfecta</option>
-    </select>
-    <p id="betDescription"></p>
+  <!-- 🔢 Odds entry -->
+  <label for="oddsInput">Enter Odds (e.g., 9/5):</label>
+  <input type="text" id="oddsInput" placeholder="e.g. 9/5">
 
-    <label for="oddsType">Odds Format:</label>
-    <select id="oddsType">
-      <option value="fractional">Fractional (e.g. 9/5)</option>
-      <option value="decimal">Decimal (e.g. 2.80)</option>
-      <option value="moneyline">Moneyline (e.g. +180)</option>
-    </select>
+  <!-- 🗓️ Track/date (for future or mock odds) -->
+  <label for="trackInput">Track Code:</label>
+  <input type="text" id="trackInput" value="BEL">
 
-    <label for="oddsInput">Enter Odds:</label>
-    <input type="text" id="oddsInput" placeholder="Enter odds..." />
-    <label for="trackInput">Track Code (e.g. BEL):</label>
-<input type="text" id="trackInput" value="BEL" />
+  <label for="raceDate">Race Date:</label>
+  <input type="date" id="raceDate" value="2025-07-24">
 
-<label for="raceDate">Race Date:</label>
-<input type="date" id="raceDate" value="2025-07-24" />
+  <!-- 🧮 Buttons -->
+  <br>
+  <button type="button" onclick="calculateOdds()">Calculate</button>
+  <button type="button" onclick="fetchPayoutDataFromInputs()">🔍 Fetch Live Odds</button>
+  <button type="button" id="shareBtn" class="share-button">🔗 Share This Bet</button>
 
-    <button id="shareBtn" class="share-button">🔗 Share This Bet</button>
-    <button onclick="calculateOdds()">Calculate</button>
-    <button onclick="copyShareLink()">🔗 Copy Shareable Link</button>
-    <button type="button" onclick="fetchPayoutDataFromInputs()">🔍 Fetch Live Odds</button>
+  <!-- 📊 Results -->
+  <div id="result" style="margin-top:20px; font-weight: bold;"></div>
 
+  <script>
+    // 🧠 Read shared bet if URL has query params
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('bet')) document.getElementById('betMode').value = params.get('bet');
+      if (params.has('amount')) document.getElementById('betAmount').value = params.get('amount');
+      if (params.has('odds')) document.getElementById('oddsInput').value = params.get('odds');
+      if (params.get('bet') && params.get('amount') && params.get('odds')) {
+        calculateOdds();
+      }
+    });
 
-    <div id="results"></div>
-    <div id="conversion"></div>
+    // ✅ Main calculator function
+    function calculateOdds() {
+      const betAmount = parseFloat(document.getElementById('betAmount').value);
+      const oddsInput = document.getElementById('oddsInput').value;
+      const resultDiv = document.getElementById('result');
 
-    <h2 style="margin-top: 30px;">📚 Recent Bets</h2>
-    <div id="historyContainer"></div>
-    <button id="clearHistory">🧹 Clear History</button>
-  </div>
+      if (!betAmount || !oddsInput.includes('/')) {
+        resultDiv.innerHTML = \"❌ Enter a valid bet amount and odds (e.g. 5/2)\";
+        return;
+      }
 
-  <script src="app.js">
- </script>
-  
+      const [num, denom] = oddsInput.split('/').map(Number);
+      const odds = num / denom;
+      const profit = betAmount * odds;
+      const total = profit + betAmount;
+
+      resultDiv.innerHTML = `💰 Profit: $${profit.toFixed(2)}<br>Total Return: $${total.toFixed(2)}`;
+    }
+
+    // 🔗 Shareable link generator
+    document.getElementById('shareBtn').addEventListener('click', () => {
+      const bet = document.getElementById('betMode').value;
+      const amount = document.getElementById('betAmount').value;
+      const odds = document.getElementById('oddsInput').value;
+      const shareURL = `${window.location.origin}${window.location.pathname}?bet=${bet}&amount=${amount}&odds=${odds}`;
+      navigator.clipboard.writeText(shareURL)
+        .then(() => alert('✅ Link copied to clipboard!'))
+        .catch(() => alert('🔗 Here is your link:\n' + shareURL));
+    });
+
+    // 🔄 Entry point to fetch with form values
+    function fetchPayoutDataFromInputs() {
+      const track = document.getElementById('trackInput').value;
+      const date = document.getElementById('raceDate').value;
+      fetchPayoutData(track, date);
+    }
+
+    // 🧪 Mock API simulation
+    async function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
+      const mockOdds = \"9/2\"; // Simulate getting real odds
+      document.getElementById('oddsInput').value = mockOdds;
+      alert(`📡 Mock odds loaded for ${trackCode} on ${date}: ${mockOdds}`);
+    }
+  </script>
+    
 </body>
 </html>
