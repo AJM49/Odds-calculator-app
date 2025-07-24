@@ -1,3 +1,24 @@
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.has('bet')) {
+    document.getElementById('betMode').value = params.get('bet');
+  }
+
+  if (params.has('amount')) {
+    document.getElementById('betAmount').value = params.get('amount');
+  }
+
+  if (params.has('odds')) {
+    document.getElementById('oddsInput').value = params.get('odds');
+  }
+
+  // Optional: Run calculation automatically
+  if (params.get('bet') && params.get('amount') && params.get('odds')) {
+    calculateOdds();
+  }
+});
+
 const MIN_BET = 0.5;
 
 function parseToDecimal(type, input) {
@@ -32,9 +53,6 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.error('❌ Service Worker error:', err));
   });
 }
-
-
-
 function calculateOdds() {
   const betAmount = parseFloat(document.getElementById("betAmount").value);
   const oddsType = document.getElementById("oddsType").value;
