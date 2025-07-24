@@ -1,121 +1,25 @@
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f5f5f5;
-  margin: 0;
-  padding: 0;
-}
-
-.container {
-  max-width: 500px;
-  margin: 40px auto;
-  background-color: #fff;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-}
-
-h1, h2 {
-  text-align: center;
-}
-
-label {
-  display: block;
-  margin-top: 15px;
-}
-
-input[type="number"],
-input[type="text"],
-select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  box-sizing: border-box;
-}
-
-button {
-  margin-top: 15px;
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  border: none;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-button:hover {
-  background-color: #0056b3;
-}
-
-#results, #conversion {
-  margin-top: 20px;
-}
-
-#historyContainer {
-  background-color: #f9f9f9;
-  padding: 15px;
-  border-radius: 8px;
-  margin-top: 10px;
-  border: 1px solid #ddd;
-}
-
-#historyContainer ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-#historyContainer li {
-  padding: 8px;
-  border-bottom: 1px solid #e0e0e0;
-  font-size: 15px;
-}
-
-#clearHistory {
-  background-color: #dc3545;
-}
-
-#clearHistory:hover {
-  background-color: #c82333;
-}
-
-/* Dark Mode Styles */
-body.dark-mode {
-  background-color: #121212;
-  color: #e0e0e0;
-}
-
-body.dark-mode .container {
-  background-color: #1e1e1e;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
-}
-
-body.dark-mode input,
-body.dark-mode select {
-  background-color: #2a2a2a;
-  color: #ffffff;
-  border: 1px solid #444;
-}
-
-body.dark-mode button {
-  background-color: #333;
-  color: #fff;
-}
-
-body.dark-mode button:hover {
-  background-color: #555;
-}
-.share-button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  margin-top: 10px;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-.share-button:hover {
-  background-color: #45a049;
-}
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+    }
+    input, select, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 1rem;
+    }
+    .share-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin-top: 10px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .share-button:hover {
+      background-color: #45a049;
+    }
