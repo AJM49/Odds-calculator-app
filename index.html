@@ -60,17 +60,13 @@
   </div>
 
   <script src="app.js">
-
     async function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
-  // 🔧 Simulated odds pulled from a race at Belmont Park
-  const mockOdds = "9/2"; // You can randomize or change as needed
+  // Simulated payout data
+  const mockOdds = "9/2";  // Simulated odds value
   document.getElementById('oddsInput').value = mockOdds;
-
-  console.log('✅ Mock odds applied:', mockOdds);
-  alert(`✅ Simulated odds loaded for ${trackCode} on ${date}: ${mockOdds}`);
+  alert(`✅ Simulated odds loaded: ${mockOdds}`);
 }
-
-  </script>
+ </script>
   
 </body>
 </html>
