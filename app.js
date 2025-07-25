@@ -45,19 +45,28 @@ function calculateOdds() {
   const [num, denom] = oddsInput.split('/').map(Number);
   const decimalOdds = num / denom;
 
-  // Multiplier adjustment per bet type
-  const multiplierMap = {
-    win: 1,
-    place: 0.5,
-    show: 0.33,
-    exacta: 2,
-    trifecta: 3,
-    superfecta: 4
-  };
+ const multiplierMap = {
+  win: 1,
+  place: 0.5,
+  show: 0.33,
+  exacta: 2,
+  exacta_box: 2.4,          // slightly more cost due to boxing
+  trifecta: 3,
+  trifecta_box: 6,          // 3 horses = 6 combos
+  trifecta_key: 3,          // key with 2 others
+  superfecta: 4,
+  daily_double: 2,
+  pick3: 3,
+  pick4: 4,
+  pick5: 5,
+  pick6: 6
+};
+
 
   const multiplier = multiplierMap[betType] || 1;
+const grossProfit = betAmount * decimalOdds * multiplier;
+const totalReturn = betAmount + grossProfit;
 
-  const grossProfit = betAmount * decimalOdds * multiplier;
   const totalReturn = betAmount + grossProfit;
   const breakEvenOdds = (1 / multiplier).toFixed(2);
   const profitOrLoss = grossProfit <= 0 ? '🔴 Loss' : '🟢 Profit';
