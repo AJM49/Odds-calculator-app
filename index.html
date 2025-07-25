@@ -2,105 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Odds Calculator</title>
-  <link rel="icon" href="favicon.png" type="image/png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horse Odds Calculator</title>
+  <link rel="icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#4CAF50" />
-
 </head>
 <body>
   <h1>Horse Odds Calculator</h1>
 
-  <!-- 🏇 Bet type dropdown -->
+  <div id="authSection">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="signUp()">Sign Up</button>
+    <button onclick="signIn()">Sign In</button>
+    <button onclick="signOut()">Sign Out</button>
+  </div>
+  <p id="authStatus"></p>
+
   <label for="betMode">Select Bet Type:</label>
   <select id="betMode">
     <option value="win">Win</option>
     <option value="place">Place</option>
     <option value="show">Show</option>
+    <option value="exacta">Exacta</option>
+    <option value="trifecta">Trifecta</option>
+    <option value="superfecta">Superfecta</option>
   </select>
 
-  <!-- 💰 Bet amount input -->
   <label for="betAmount">Bet Amount ($):</label>
   <input type="number" id="betAmount" min="0.5" step="0.1" placeholder="e.g. 2.00">
 
-  <!-- 🔢 Odds entry -->
   <label for="oddsInput">Enter Odds (e.g., 9/5):</label>
   <input type="text" id="oddsInput" placeholder="e.g. 9/5">
 
-  <!-- 🗓️ Track/date (for future or mock odds) -->
   <label for="trackInput">Track Code:</label>
   <input type="text" id="trackInput" value="BEL">
 
   <label for="raceDate">Race Date:</label>
   <input type="date" id="raceDate" value="2025-07-24">
 
-  <!-- 🧮 Buttons -->
   <br>
   <button type="button" onclick="calculateOdds()">Calculate</button>
   <button type="button" onclick="fetchPayoutDataFromInputs()">🔍 Fetch Live Odds</button>
   <button type="button" id="shareBtn" class="share-button">🔗 Share This Bet</button>
 
-  <!-- 📊 Results -->
-  <div id="result" style="margin-top:20px; font-weight: bold;"></div>
+  <div id="result"></div>
 
-  <script>
-    // 🧠 Read shared bet if URL has query params
-    window.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.has('bet')) document.getElementById('betMode').value = params.get('bet');
-      if (params.has('amount')) document.getElementById('betAmount').value = params.get('amount');
-      if (params.has('odds')) document.getElementById('oddsInput').value = params.get('odds');
-      if (params.get('bet') && params.get('amount') && params.get('odds')) {
-        calculateOdds();
-      }
-    });
-
-    // ✅ Main calculator function
-    function calculateOdds() {
-      const betAmount = parseFloat(document.getElementById('betAmount').value);
-      const oddsInput = document.getElementById('oddsInput').value;
-      const resultDiv = document.getElementById('result');
-
-      if (!betAmount || !oddsInput.includes('/')) {
-        resultDiv.innerHTML = \"❌ Enter a valid bet amount and odds (e.g. 5/2)\";
-        return;
-      }
-
-      const [num, denom] = oddsInput.split('/').map(Number);
-      const odds = num / denom;
-      const profit = betAmount * odds;
-      const total = profit + betAmount;
-
-      resultDiv.innerHTML = `💰 Profit: $${profit.toFixed(2)}<br>Total Return: $${total.toFixed(2)}`;
-    }
-
-    // 🔗 Shareable link generator
-    document.getElementById('shareBtn').addEventListener('click', () => {
-      const bet = document.getElementById('betMode').value;
-      const amount = document.getElementById('betAmount').value;
-      const odds = document.getElementById('oddsInput').value;
-      const shareURL = `${window.location.origin}${window.location.pathname}?bet=${bet}&amount=${amount}&odds=${odds}`;
-      navigator.clipboard.writeText(shareURL)
-        .then(() => alert('✅ Link copied to clipboard!'))
-        .catch(() => alert('🔗 Here is your link:\n' + shareURL));
-    });
-
-    // 🔄 Entry point to fetch with form values
-    function fetchPayoutDataFromInputs() {
-      const track = document.getElementById('trackInput').value;
-      const date = document.getElementById('raceDate').value;
-      fetchPayoutData(track, date);
-    }
-
-    // 🧪 Mock API simulation
-    async function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
-      const mockOdds = \"9/2\"; // Simulate getting real odds
-      document.getElementById('oddsInput').value = mockOdds;
-      alert(`📡 Mock odds loaded for ${trackCode} on ${date}: ${mockOdds}`);
-    }
-  </script>
-    
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <!-- Main App Script -->
+  <script src="app.js"></script>
 </body>
 </html>
