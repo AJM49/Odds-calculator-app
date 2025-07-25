@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-  <a href="admin.html" style="float:right;">👤 Admin</a>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -43,18 +42,16 @@
   <input type="date" id="raceDate" value="2025-07-24">
 
   <br>
-  <button type="button" onclick="calculateOdds()">Calculate</button>
-  <button type="button" onclick="fetchPayoutDataFromInputs()">🔍 Fetch Live Odds</button>
-  <button type="button" id="shareBtn" class="share-button">🔗 Share This Bet</button>
+  <button onclick="calculateOdds()">Calculate</button>
+  <button onclick="fetchPayoutDataFromInputs()">🔍 Fetch Live Odds</button>
+  <button id="shareBtn" class="share-button">🔗 Share This Bet</button>
+  <a href="admin.html">👤 Admin</a>
 
-  <div id="result"></div>
+  <div id="result" style="margin-top:20px; font-weight: bold;"></div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-  <!-- Main App Script -->
   <script src="app.js"></script>
 </body>
 </html>
