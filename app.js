@@ -1,3 +1,4 @@
+// ✅ Firebase config - replace these with your Firebase project values
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -5,11 +6,12 @@ const firebaseConfig = {
   appId: "YOUR_APP_ID"
 };
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-
+// ✅ Authentication functions
 function signUp() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -32,6 +34,7 @@ function signOut() {
     .catch(error => alert("❌ " + error.message));
 }
 
+// ✅ Pre-fill fields from shareable URL
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   if (params.has('bet')) document.getElementById('betMode').value = params.get('bet');
@@ -42,6 +45,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// ✅ Odds calculation with Firestore logging
 function calculateOdds() {
   const betType = document.getElementById('betMode').value;
   const betAmount = parseFloat(document.getElementById('betAmount').value);
@@ -65,8 +69,26 @@ function calculateOdds() {
   const total = betAmount + profit;
 
   resultDiv.innerHTML = `💰 Profit: $${profit.toFixed(2)}<br>Total Return: $${total.toFixed(2)}`;
+
+  // ✅ Log to Firestore if signed in
+  if (auth.currentUser) {
+    db.collection("bets").add({
+      user: auth.currentUser.email,
+      betType,
+      betAmount,
+      odds: oddsInput,
+      profit: profit.toFixed(2),
+      total: total.toFixed(2),
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      console.log("✅ Bet logged to Firestore");
+    }).catch((error) => {
+      console.error("❌ Error logging bet:", error);
+    });
+  }
 }
 
+// ✅ Shareable bet link
 document.getElementById('shareBtn').addEventListener('click', () => {
   const bet = document.getElementById('betMode').value;
   const amount = document.getElementById('betAmount').value;
@@ -77,12 +99,14 @@ document.getElementById('shareBtn').addEventListener('click', () => {
     .catch(() => alert('🔗 Here is your link:\n' + shareURL));
 });
 
+// ✅ Manual fetch trigger from UI
 function fetchPayoutDataFromInputs() {
   const track = document.getElementById('trackInput').value;
   const date = document.getElementById('raceDate').value;
   fetchPayoutData(track, date);
 }
 
+// ✅ Mock live odds fetch (can be replaced with real API)
 async function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
   const mockOdds = "9/2";
   document.getElementById('oddsInput').value = mockOdds;
