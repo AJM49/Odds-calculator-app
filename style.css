@@ -1,25 +1,33 @@
 body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
-      text-align: center;
-    }
-    input, select, button {
-      margin: 10px;
-      padding: 10px;
-      font-size: 1rem;
-    }
-    .share-button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      margin-top: 10px;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    .share-button:hover {
-      background-color: #45a049;
-    }
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  padding: 20px;
+  text-align: center;
+}
+
+input, select, button {
+  margin: 10px;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.share-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  margin-top: 10px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.share-button:hover {
+  background-color: #45a049;
+}
+
+#result {
+  margin-top: 20px;
+  font-weight: bold;
+}
