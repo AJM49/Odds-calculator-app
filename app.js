@@ -1,239 +1,88 @@
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+function signUp() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => alert("✅ Signed up!"))
+    .catch(error => alert("❌ " + error.message));
+}
+
+function signIn() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => document.getElementById("authStatus").innerText = "🔓 Logged in as " + email)
+    .catch(error => alert("❌ " + error.message));
+}
+
+function signOut() {
+  auth.signOut()
+    .then(() => document.getElementById("authStatus").innerText = "🔒 Logged out")
+    .catch(error => alert("❌ " + error.message));
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
-
-  if (params.has('bet')) {
-    document.getElementById('betMode').value = params.get('bet');
-  }
-
-  if (params.has('amount')) {
-    document.getElementById('betAmount').value = params.get('amount');
-  }
-
-  if (params.has('odds')) {
-    document.getElementById('oddsInput').value = params.get('odds');
-  }
-
-  // Optional: Run calculation automatically
+  if (params.has('bet')) document.getElementById('betMode').value = params.get('bet');
+  if (params.has('amount')) document.getElementById('betAmount').value = params.get('amount');
+  if (params.has('odds')) document.getElementById('oddsInput').value = params.get('odds');
   if (params.get('bet') && params.get('amount') && params.get('odds')) {
     calculateOdds();
   }
 });
 
-const MIN_BET = 0.5;
-
-function parseToDecimal(type, input) {
-  if (type === "fractional") {
-    const [num, denom] = input.split("/").map(Number);
-    return 1 + (num / denom);
-  } else if (type === "decimal") {
-    return parseFloat(input);
-  } else if (type === "moneyline") {
-    const ml = parseFloat(input);
-    return ml > 0 ? (ml / 100) + 1 : (100 / Math.abs(ml)) + 1;
-  }
-}
-
-function decimalToFraction(decimal) {
-  const frac = decimal - 1;
-  const denom = 100;
-  const num = Math.round(frac * denom);
-  return `${num}/${denom}`;
-}
-
-function decimalToMoneyline(decimal) {
-  const profit = decimal - 1;
-  return profit >= 1
-    ? `+${Math.round(profit * 100)}`
-    : `-${Math.round(100 / profit)}`;
-}
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(reg => console.log('✅ Service Worker registered:', reg))
-      .catch(err => console.error('❌ Service Worker error:', err));
-  });
-}
 function calculateOdds() {
-  const betAmount = parseFloat(document.getElementById("betAmount").value);
-  const oddsType = document.getElementById("oddsType").value;
-  const oddsInput = document.getElementById("oddsInput").value.trim();
-  const betMode = document.getElementById("betMode").value;
+  const betType = document.getElementById('betMode').value;
+  const betAmount = parseFloat(document.getElementById('betAmount').value);
+  const oddsInput = document.getElementById('oddsInput').value;
+  const resultDiv = document.getElementById('result');
 
-  const descriptions = {
-    win: "🏆 Horse must finish 1st",
-    place: "🥈 Horse must finish 1st or 2nd",
-    show: "🥉 Horse must finish 1st, 2nd, or 3rd",
-    exacta: "🔢 Pick 1st and 2nd in exact order",
-    trifecta: "🔁 Pick 1st, 2nd, and 3rd in order",
-    superfecta: "🎯 Pick 1st through 4th in exact order"
-  };
-
-  document.getElementById("betDescription").innerText = descriptions[betMode];
-
-  if (isNaN(betAmount) || betAmount < MIN_BET) {
-    alert(`Please enter a bet of at least $${MIN_BET.toFixed(2)}.`);
+  if (!betAmount || !oddsInput.includes('/')) {
+    resultDiv.innerHTML = "❌ Enter a valid bet amount and odds (e.g. 5/2)";
     return;
   }
 
-  let decimalOdds;
-  try {
-    decimalOdds = parseToDecimal(oddsType, oddsInput);
-    if (isNaN(decimalOdds) || decimalOdds <= 1) throw Error();
-  } catch {
-    alert("Invalid odds format.");
-    return;
-  }
+  const [num, denom] = oddsInput.split('/').map(Number);
+  const odds = num / denom;
 
-  let profit, totalReturn;
+  let multiplier = 1;
+  if (betType === "exacta") multiplier = 2;
+  else if (betType === "trifecta") multiplier = 3;
+  else if (betType === "superfecta") multiplier = 4;
 
-  switch (betMode) {
-    case "win":
-      profit = betAmount * (decimalOdds - 1);
-      break;
-    case "place":
-      profit = betAmount * ((decimalOdds - 1) / 2);
-      break;
-    case "show":
-      profit = betAmount * ((decimalOdds - 1) / 3);
-      break;
-    case "exacta":
-      profit = betAmount * 5;
-      break;
-    case "trifecta":
-      profit = betAmount * 25;
-      break;
-    case "superfecta":
-      profit = betAmount * 100;
-      break;
-    default:
-      profit = 0;
-  }
+  const profit = betAmount * odds * multiplier;
+  const total = betAmount + profit;
 
-  totalReturn = betAmount + profit;
-
-  document.getElementById("results").innerHTML = `
-    <p><strong>Bet Type:</strong> ${betMode.toUpperCase()}</p>
-    <p><strong>Profit:</strong> $${profit.toFixed(2)}</p>
-    <p><strong>Total Return:</strong> $${totalReturn.toFixed(2)}</p>
-  `;
-
-  const frac = decimalToFraction(decimalOdds);
-  const ml = decimalToMoneyline(decimalOdds);
-  document.getElementById("conversion").innerHTML = `
-    <h3>Equivalent Odds</h3>
-    <p><strong>Fractional:</strong> ${frac}</p>
-    <p><strong>Decimal:</strong> ${decimalOdds.toFixed(2)}</p>
-    <p><strong>Moneyline:</strong> ${ml}</p>
-  `;
-
-  document.title = `💰 ${decimalOdds.toFixed(2)} Odds Return`;
-
-  saveBetToHistory({
-    amount: betAmount,
-    odds: oddsInput,
-    type: oddsType,
-    mode: betMode,
-    return: totalReturn,
-    profit: profit
-  });
+  resultDiv.innerHTML = `💰 Profit: $${profit.toFixed(2)}<br>Total Return: $${total.toFixed(2)}`;
 }
 
-function saveBetToHistory(bet) {
-  let history = JSON.parse(localStorage.getItem("betHistory")) || [];
-  history.unshift(bet);
-  if (history.length > 10) history.pop();
-  localStorage.setItem("betHistory", JSON.stringify(history));
-  displayBetHistory();
-}
-
-function displayBetHistory() {
-  const history = JSON.parse(localStorage.getItem("betHistory")) || [];
-  const container = document.getElementById("historyContainer");
-
-  if (history.length === 0) {
-    container.innerHTML = "<p>No bets saved yet.</p>";
-    return;
-  }
-
-  container.innerHTML = "<ul>" + history.map(bet => `
-    <li>
-      $${bet.amount.toFixed(2)} on ${bet.mode.toUpperCase()} @ ${bet.odds} (${bet.type}) → 
-      Return: $${bet.return.toFixed(2)}, Profit: $${bet.profit.toFixed(2)}
-    </li>`).join("") + "</ul>";
-}
-
-document.getElementById("clearHistory").addEventListener("click", () => {
-  localStorage.removeItem("betHistory");
-  displayBetHistory();
+document.getElementById('shareBtn').addEventListener('click', () => {
+  const bet = document.getElementById('betMode').value;
+  const amount = document.getElementById('betAmount').value;
+  const odds = document.getElementById('oddsInput').value;
+  const shareURL = `${window.location.origin}${window.location.pathname}?bet=${bet}&amount=${amount}&odds=${odds}`;
+  navigator.clipboard.writeText(shareURL)
+    .then(() => alert('✅ Link copied to clipboard!'))
+    .catch(() => alert('🔗 Here is your link:\n' + shareURL));
 });
 
-function loadFromURLParams() {
-  const params = new URLSearchParams(window.location.search);
-  const bet = parseFloat(params.get("bet"));
-  const odds = params.get("odds");
-  const type = params.get("type");
-  const mode = params.get("mode");
-
-  if (bet && odds && type) {
-    document.getElementById("betAmount").value = bet;
-    document.getElementById("oddsInput").value = odds;
-    document.getElementById("oddsType").value = type;
-    if (mode) document.getElementById("betMode").value = mode;
-    calculateOdds();
-  }
+function fetchPayoutDataFromInputs() {
+  const track = document.getElementById('trackInput').value;
+  const date = document.getElementById('raceDate').value;
+  fetchPayoutData(track, date);
 }
 
-function copyShareLink() {
-  const bet = document.getElementById("betAmount").value;
-  const odds = document.getElementById("oddsInput").value;
-  const type = document.getElementById("oddsType").value;
-  const mode = document.getElementById("betMode").value;
-
-  const baseUrl = window.location.origin + window.location.pathname;
-  const shareURL = `${baseUrl}?bet=${bet}&odds=${encodeURIComponent(odds)}&type=${type}&mode=${mode}`;
-
-  navigator.clipboard.writeText(shareURL)
-    .then(() => alert("Link copied to clipboard!"))
-    .catch(() => alert("Failed to copy link."));
+async function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
+  const mockOdds = "9/2";
+  document.getElementById('oddsInput').value = mockOdds;
+  alert(`📡 Mock odds loaded for ${trackCode} on ${date}: ${mockOdds}`);
 }
-
-function applyTheme(theme) {
-  document.body.classList.toggle("dark-mode", theme === "dark");
-}
-
-function toggleTheme() {
-  const currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
-  const newTheme = currentTheme === "dark" ? "light" : "dark";
-  applyTheme(newTheme);
-  localStorage.setItem("theme", newTheme);
-}
-
-document.getElementById("themeToggle").addEventListener("click", toggleTheme);
-
-window.addEventListener("load", () => {
-  const savedTheme = localStorage.getItem("theme") || "light";
-  applyTheme(savedTheme);
-  displayBetHistory();
-  loadFromURLParams();
-
-  // Fetch real-time odds using Horse Racing Labs API
-    async function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
-      try {
-        const response = await fetch(`https://api.horseracinglabs.com/v2/odds/tracks/${trackCode}/date/${date}?api-key=YOUR_API_KEY`);
-        const data = await response.json();
-        console.log('Live Payout Data:', data);
-        alert('✅ Live odds fetched. Check console for details.');
-      } catch (error) {
-        console.error('❌ Failed to fetch payout data:', error);
-        alert('Failed to load payout data.');
-      }
-    }
-
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(reg => console.log('✅ Service Worker registered:', reg))
-          .catch(err => console.error('❌ Service Worker error:', err));
-      });
-    }
