@@ -32,41 +32,64 @@ function signOut() {
 }
 
 function calculateOdds() {
-  const betType = document.getElementById("betMode").value;
-  const betAmount = parseFloat(document.getElementById("betAmount").value);
-  const oddsInput = document.getElementById("oddsInput").value;
-  const resultDiv = document.getElementById("result");
+  const betType = document.getElementById('betMode').value;
+  const betAmount = parseFloat(document.getElementById('betAmount').value);
+  const oddsInput = document.getElementById('oddsInput').value;
+  const resultDiv = document.getElementById('result');
 
-  if (!betAmount || !oddsInput.includes("/")) {
-    resultDiv.innerHTML = "Enter a valid bet amount and odds (e.g. 5/2)";
+  if (!betAmount || !oddsInput.includes('/')) {
+    resultDiv.innerHTML = "❌ Enter a valid bet amount and odds (e.g. 5/2)";
     return;
   }
 
-  const [num, denom] = oddsInput.split("/").map(Number);
-  const odds = num / denom;
+  const [num, denom] = oddsInput.split('/').map(Number);
+  const decimalOdds = num / denom;
 
-  let multiplier = 1;
-  if (betType === "exacta") multiplier = 2;
-  else if (betType === "trifecta") multiplier = 3;
-  else if (betType === "superfecta") multiplier = 4;
+  // Multiplier adjustment per bet type
+  const multiplierMap = {
+    win: 1,
+    place: 0.5,
+    show: 0.33,
+    exacta: 2,
+    trifecta: 3,
+    superfecta: 4
+  };
 
-  const profit = betAmount * odds * multiplier;
-  const total = betAmount + profit;
+  const multiplier = multiplierMap[betType] || 1;
 
-  resultDiv.innerHTML = `Profit: $${profit.toFixed(2)}<br>Total Return: $${total.toFixed(2)}`;
+  const grossProfit = betAmount * decimalOdds * multiplier;
+  const totalReturn = betAmount + grossProfit;
+  const breakEvenOdds = (1 / multiplier).toFixed(2);
+  const profitOrLoss = grossProfit <= 0 ? '🔴 Loss' : '🟢 Profit';
 
-  if (auth.currentUser) {
-    db.collection("bets").add({
-      user: auth.currentUser.email,
+  // Warning if low return
+  const warning = (grossProfit < 0.5)
+    ? "⚠️ Odds may be too low to profit from this wager."
+    : "";
+
+  resultDiv.innerHTML = `
+    💸 Type: <b>${betType}</b><br>
+    📊 Decimal Odds: <b>${decimalOdds.toFixed(2)}</b><br>
+    💰 Gross Profit: <b>$${grossProfit.toFixed(2)}</b><br>
+    💵 Total Return: <b>$${totalReturn.toFixed(2)}</b><br>
+    📈 Break-even Odds: <b>${breakEvenOdds}</b><br>
+    ✅ ${profitOrLoss}<br>
+    ${warning}
+  `;
+
+  // Optional: log to Firestore
+  if (typeof logBetToFirestore === 'function') {
+    logBetToFirestore({
       betType,
-      betAmount,
+      amount: betAmount,
       odds: oddsInput,
-      profit: profit.toFixed(2),
-      total: total.toFixed(2),
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      profit: grossProfit.toFixed(2),
+      total: totalReturn.toFixed(2),
+      timestamp: new Date(),
     });
   }
 }
+
 
 document.getElementById("shareBtn").addEventListener("click", () => {
   const bet = document.getElementById("betMode").value;
