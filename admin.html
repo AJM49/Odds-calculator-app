@@ -27,7 +27,7 @@
     const db = firebase.firestore();
 
     firebase.auth().onAuthStateChanged(user => {
-      if (!user || user.email !== "your-admin@email.com") {
+      if (!user || user.email !== "albert.murph@gmail.com") {
         alert("⛔ Unauthorized access. Redirecting...");
         window.location.href = "/";
       } else {
