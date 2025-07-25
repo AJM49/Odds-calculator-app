@@ -4,20 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Horse Odds Calculator</title>
-  <link rel="icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="favicon.ico" />
 </head>
 <body>
   <h1>Horse Odds Calculator</h1>
 
   <div id="authSection">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
     <button onclick="signUp()">Sign Up</button>
     <button onclick="signIn()">Sign In</button>
     <button onclick="signOut()">Sign Out</button>
+    <p id="authStatus"></p>
   </div>
-  <p id="authStatus"></p>
 
   <label for="betMode">Select Bet Type:</label>
   <select id="betMode">
@@ -29,25 +29,16 @@
     <option value="superfecta">Superfecta</option>
   </select>
 
-  <label for="betAmount">Bet Amount ($):</label>
-  <input type="number" id="betAmount" min="0.5" step="0.1" placeholder="e.g. 2.00">
+  <input type="number" id="betAmount" placeholder="Bet Amount ($)" min="0.5" step="0.1" />
+  <input type="text" id="oddsInput" placeholder="Enter Odds (e.g., 9/5)" />
+  <input type="text" id="trackInput" placeholder="Track Code" value="BEL" />
+  <input type="date" id="raceDate" value="2025-07-24" />
 
-  <label for="oddsInput">Enter Odds (e.g., 9/5):</label>
-  <input type="text" id="oddsInput" placeholder="e.g. 9/5">
-
-  <label for="trackInput">Track Code:</label>
-  <input type="text" id="trackInput" value="BEL">
-
-  <label for="raceDate">Race Date:</label>
-  <input type="date" id="raceDate" value="2025-07-24">
-
-  <br>
   <button onclick="calculateOdds()">Calculate</button>
-  <button onclick="fetchPayoutDataFromInputs()">🔍 Fetch Live Odds</button>
-  <button id="shareBtn" class="share-button">🔗 Share This Bet</button>
-  <a href="admin.html">👤 Admin</a>
+  <button onclick="fetchPayoutDataFromInputs()">Fetch Live Odds</button>
+  <button id="shareBtn" class="share-button">Share This Bet</button>
 
-  <div id="result" style="margin-top:20px; font-weight: bold;"></div>
+  <div id="result"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
