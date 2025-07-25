@@ -31,11 +31,23 @@ function signOut() {
     .catch(error => alert(error.message));
 }
 
-function calculateOdds() {
-  const betType = document.getElementById('betMode').value;
-  const betAmount = parseFloat(document.getElementById('betAmount').value);
-  const oddsInput = document.getElementById('oddsInput').value;
-  const resultDiv = document.getElementById('result');
+  function calculateOdds() {
+    const betType = document.getElementById('betMode').value;
+    const betAmount = parseFloat(document.getElementById('betAmount').value);
+    const oddsInput = document.getElementById('oddsInput').value;
+    const resultDiv = document.getElementById('result');
+  const descriptions = {
+    exacta_box: "Boxing 2 horses = 2 combinations (1-2, 2-1)",
+    trifecta_box: "Boxing 3 horses = 6 combinations",
+    trifecta_key: "Keying 1 horse with 2 others = 3 combinations",
+    daily_double: "Pick winners of 2 races",
+    pick3: "Pick winners of 3 races",
+    pick4: "Pick winners of 4 races",
+    pick5: "Pick winners of 5 races",
+    pick6: "Pick winners of 6 races"
+  };
+
+document.getElementById("betInfo").innerText = descriptions[betType] || "";
 
   if (!betAmount || !oddsInput.includes('/')) {
     resultDiv.innerHTML = "❌ Enter a valid bet amount and odds (e.g. 5/2)";
