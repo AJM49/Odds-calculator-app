@@ -27,7 +27,16 @@ input, select, button {
   background-color: #45a049;
 }
 
-#result {
-  margin-top: 20px;
-  font-weight: bold;
+.logs {
+  max-width: 800px;
+  margin: 20px auto;
+  text-align: left;
+}
+
+.log-entry {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
 }
