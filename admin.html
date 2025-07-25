@@ -12,18 +12,41 @@
   <div id="betLogs" style="margin-top: 20px; text-align: left; max-width: 800px; margin-left: auto; margin-right: auto;"></div>
 
   <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<!--   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+ -->
+<!--   <script> -->
+<!--    // const firebaseConfig = {
+      //apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
+     // authDomain: "horse-bet-calculator.firebaseapp.com",
+      //projectId: "Horse Bet Calculator",
+      //appId: "YOUR_APP_ID"
+    //}; -->
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      appId: "YOUR_APP_ID"
-    };
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
+    authDomain: "horse-bet-calculator.firebaseapp.com",
+    projectId: "horse-bet-calculator",
+    storageBucket: "horse-bet-calculator.firebasestorage.app",
+    messagingSenderId: "258212871291",
+    appId: "1:258212871291:web:efcbb1d5715a9c9cd476de",
+    measurementId: "G-WBWCC948YL"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
