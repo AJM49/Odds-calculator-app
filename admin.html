@@ -5,34 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin - Bet Logs</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
-      text-align: center;
-    }
-    #betLogs {
-      text-align: left;
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    .bet-entry {
-      border-bottom: 1px solid #ddd;
-      padding: 10px 0;
-    }
-  </style>
 </head>
 <body>
   <h1>📊 Admin Dashboard</h1>
   <button onclick="loadBets()">🔄 Refresh Bets</button>
-  <div id="betLogs">Loading...</div>
+  <div id="betLogs" class="logs"></div>
 
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -48,9 +26,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 🔐 Admin Restriction
     firebase.auth().onAuthStateChanged(user => {
-      if (!user || user.email !== "admin@example.com") {
+      if (!user || user.email !== "your-admin@email.com") {
         alert("⛔ Unauthorized access. Redirecting...");
         window.location.href = "/";
       } else {
@@ -72,18 +49,18 @@
         const html = snapshot.docs.map(doc => {
           const bet = doc.data();
           return `
-            <div class="bet-entry">
-              <strong>User:</strong> ${bet.user}<br>
-              <strong>Type:</strong> ${bet.betType} | <strong>Amount:</strong> $${bet.betAmount} | <strong>Odds:</strong> ${bet.odds}<br>
-              <strong>Profit:</strong> $${bet.profit} | <strong>Total:</strong> $${bet.total}<br>
-              <strong>Date:</strong> ${bet.timestamp?.toDate().toLocaleString() || '—'}
+            <div class="log-entry">
+              🧑 User: <strong>${bet.user}</strong><br>
+              🏇 Type: ${bet.betType} | 💵 $${bet.betAmount} | 🎯 Odds: ${bet.odds}<br>
+              💰 Profit: $${bet.profit} | Total: $${bet.total}<br>
+              ⏱️ ${bet.timestamp?.toDate().toLocaleString() || '—'}
             </div>
           `;
         }).join("");
 
         betLogs.innerHTML = html;
       } catch (err) {
-        betLogs.innerHTML = "❌ Failed to load bets: " + err.message;
+        betLogs.innerHTML = "❌ Failed to load: " + err.message;
       }
     }
   </script>
