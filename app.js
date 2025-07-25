@@ -1,51 +1,89 @@
-<script>
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    appId: "YOUR_APP_ID"
-  };
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  appId: "YOUR_APP_ID"
+};
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-  // ✅ Admin-only Access Restriction
-  firebase.auth().onAuthStateChanged(user => {
-    if (!user || user.email !== "your-admin@email.com") {
-      alert("⛔ Unauthorized access. Redirecting...");
-      window.location.href = "/";
-    } else {
-      loadBets(); // only runs if admin is authenticated
-    }
-  });
+function signUp() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => alert("Signed up!"))
+    .catch(error => alert(error.message));
+}
 
-  // ✅ Load bet logs
-  async function loadBets() {
-    const betLogs = document.getElementById("betLogs");
-    betLogs.innerHTML = "Loading...";
+function signIn() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => document.getElementById("authStatus").innerText = "Logged in as " + email)
+    .catch(error => alert(error.message));
+}
 
-    try {
-      const snapshot = await db.collection("bets").orderBy("timestamp", "desc").get();
-      if (snapshot.empty) {
-        betLogs.innerHTML = "No bets found.";
-        return;
-      }
+function signOut() {
+  auth.signOut()
+    .then(() => document.getElementById("authStatus").innerText = "Logged out")
+    .catch(error => alert(error.message));
+}
 
-      const html = snapshot.docs.map(doc => {
-        const bet = doc.data();
-        return `
-          <div style="border-bottom:1px solid #ccc; padding:10px 0;">
-            🧑 User: <strong>${bet.user}</strong><br>
-            🏇 Type: <strong>${bet.betType}</strong> | 💵 Amount: $${bet.betAmount} | 🎯 Odds: ${bet.odds}<br>
-            💰 Profit: $${bet.profit} | Total Return: $${bet.total}<br>
-            🕒 Date: ${bet.timestamp?.toDate().toLocaleString() || '—'}
-          </div>
-        `;
-      }).join("");
+function calculateOdds() {
+  const betType = document.getElementById("betMode").value;
+  const betAmount = parseFloat(document.getElementById("betAmount").value);
+  const oddsInput = document.getElementById("oddsInput").value;
+  const resultDiv = document.getElementById("result");
 
-      betLogs.innerHTML = html;
-    } catch (err) {
-      betLogs.innerHTML = "❌ Failed to load bets: " + err.message;
-    }
+  if (!betAmount || !oddsInput.includes("/")) {
+    resultDiv.innerHTML = "Enter a valid bet amount and odds (e.g. 5/2)";
+    return;
   }
-</script>
+
+  const [num, denom] = oddsInput.split("/").map(Number);
+  const odds = num / denom;
+
+  let multiplier = 1;
+  if (betType === "exacta") multiplier = 2;
+  else if (betType === "trifecta") multiplier = 3;
+  else if (betType === "superfecta") multiplier = 4;
+
+  const profit = betAmount * odds * multiplier;
+  const total = betAmount + profit;
+
+  resultDiv.innerHTML = `Profit: $${profit.toFixed(2)}<br>Total Return: $${total.toFixed(2)}`;
+
+  if (auth.currentUser) {
+    db.collection("bets").add({
+      user: auth.currentUser.email,
+      betType,
+      betAmount,
+      odds: oddsInput,
+      profit: profit.toFixed(2),
+      total: total.toFixed(2),
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+}
+
+document.getElementById("shareBtn").addEventListener("click", () => {
+  const bet = document.getElementById("betMode").value;
+  const amount = document.getElementById("betAmount").value;
+  const odds = document.getElementById("oddsInput").value;
+  const shareURL = `${window.location.origin}${window.location.pathname}?bet=${bet}&amount=${amount}&odds=${odds}`;
+  navigator.clipboard.writeText(shareURL).then(() => alert("Link copied to clipboard!"));
+});
+
+function fetchPayoutDataFromInputs() {
+  const track = document.getElementById("trackInput").value;
+  const date = document.getElementById("raceDate").value;
+  fetchPayoutData(track, date);
+}
+
+function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
+  const mockOdds = "9/2";
+  document.getElementById("oddsInput").value = mockOdds;
+  alert(`Mock odds loaded for ${trackCode} on ${date}: ${mockOdds}`);
+}
