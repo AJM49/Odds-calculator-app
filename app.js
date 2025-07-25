@@ -105,8 +105,8 @@ function fetchPayoutDataFromInputs() {
   fetchPayoutData(track, date);
 }
 
-function fetchPayoutData(trackCode = 'BEL', date = '2025-07-24') {
-  const mockOdds = "9/2";
+function fetchPayoutData(trackCode = '', date = '2025-07-25') {
+  const mockOdds = "5/2";
   document.getElementById("oddsInput").value = mockOdds;
   alert(`Mock odds loaded for ${trackCode} on ${date}: ${mockOdds}`);
 }
