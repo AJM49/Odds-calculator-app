@@ -2,18 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin - Bet Logs</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <h1>📊 Admin Dashboard</h1>
-  <button onclick="loadBets()">🔄 Refresh Bets</button>
-  <div id="betLogs" class="logs"></div>
-
+  <title>Admin Dashboard - Horse Odds App</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f8f8f8;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+    th {
+      background-color: #eee;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin: Recent Bets</h1>
+  <p id="authStatus">🔒 Verifying admin...</p>
+  <table id="betsTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Odds</th>
+        <th>Profit</th>
+        <th>Total</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody id="betsBody"></tbody>
+  </table>
 
   <script>
     const firebaseConfig = {
@@ -22,47 +54,41 @@
       projectId: "horse-bet-calculator",
       appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
     };
-
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.firestore();
 
-    firebase.auth().onAuthStateChanged(user => {
-      if (!user || user.email !== "albert.murph@gmail.com") {
-        alert("⛔ Unauthorized access. Redirecting...");
-        window.location.href = "/";
-      } else {
-        loadBets();
+    const adminEmail = "your-admin@email.com"; // Replace with your actual admin email
+
+    auth.onAuthStateChanged(user => {
+      if (!user || user.email !== adminEmail) {
+        document.getElementById("authStatus").innerText = "❌ Unauthorized access.";
+        alert("You are not authorized.");
+        return window.location.href = "/";
       }
-    });
 
-    async function loadBets() {
-      const betLogs = document.getElementById("betLogs");
-      betLogs.innerHTML = "Loading...";
+      document.getElementById("authStatus").innerText = "✅ Admin logged in: " + user.email;
+      document.getElementById("betsTable").style.display = "table";
 
-      try {
-        const snapshot = await db.collection("bets").orderBy("timestamp", "desc").get();
-        if (snapshot.empty) {
-          betLogs.innerHTML = "No bets found.";
-          return;
-        }
-
-        const html = snapshot.docs.map(doc => {
-          const bet = doc.data();
-          return `
-            <div class="log-entry">
-              🧑 User: <strong>${bet.user}</strong><br>
-              🏇 Type: ${bet.betType} | 💵 $${bet.betAmount} | 🎯 Odds: ${bet.odds}<br>
-              💰 Profit: $${bet.profit} | Total: $${bet.total}<br>
-              ⏱️ ${bet.timestamp?.toDate().toLocaleString() || '—'}
-            </div>
+      db.collection("bets").orderBy("timestamp", "desc").limit(20).onSnapshot(snapshot => {
+        const tbody = document.getElementById("betsBody");
+        tbody.innerHTML = "";
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${data.user || "-"}</td>
+            <td>${data.betType}</td>
+            <td>$${data.amount}</td>
+            <td>${data.odds}</td>
+            <td>$${data.profit}</td>
+            <td>$${data.total}</td>
+            <td>${new Date(data.timestamp?.seconds * 1000).toLocaleString()}</td>
           `;
-        }).join("");
-
-        betLogs.innerHTML = html;
-      } catch (err) {
-        betLogs.innerHTML = "❌ Failed to load: " + err.message;
-      }
-    }
+          tbody.appendChild(tr);
+        });
+      });
+    });
   </script>
 </body>
 </html>
