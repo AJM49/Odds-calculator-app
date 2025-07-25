@@ -5,50 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin - Bet Logs</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+    }
+    #betLogs {
+      text-align: left;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .bet-entry {
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+    }
+  </style>
 </head>
 <body>
   <h1>📊 Admin Dashboard</h1>
   <button onclick="loadBets()">🔄 Refresh Bets</button>
-  <div id="betLogs" style="margin-top: 20px; text-align: left; max-width: 800px; margin-left: auto; margin-right: auto;"></div>
+  <div id="betLogs">Loading...</div>
 
   <!-- Firebase SDKs -->
-<!--   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
- -->
-<!--   <script> -->
-<!--    // const firebaseConfig = {
-      //apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
-     // authDomain: "horse-bet-calculator.firebaseapp.com",
-      //projectId: "Horse Bet Calculator",
-      //appId: "YOUR_APP_ID"
-    //}; -->
 
-    <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
-    authDomain: "horse-bet-calculator.firebaseapp.com",
-    projectId: "horse-bet-calculator",
-    storageBucket: "horse-bet-calculator.firebasestorage.app",
-    messagingSenderId: "258212871291",
-    appId: "1:258212871291:web:efcbb1d5715a9c9cd476de",
-    measurementId: "G-WBWCC948YL"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    // 🔐 Admin Restriction
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user || user.email !== "admin@example.com") {
+        alert("⛔ Unauthorized access. Redirecting...");
+        window.location.href = "/";
+      } else {
+        loadBets();
+      }
+    });
 
     async function loadBets() {
       const betLogs = document.getElementById("betLogs");
@@ -64,11 +72,11 @@
         const html = snapshot.docs.map(doc => {
           const bet = doc.data();
           return `
-            <div style="border-bottom:1px solid #ccc; padding:10px 0;">
-              🧑 User: <strong>${bet.user}</strong><br>
-              🏇 Type: <strong>${bet.betType}</strong> | 💵 Amount: $${bet.betAmount} | 🎯 Odds: ${bet.odds}<br>
-              💰 Profit: $${bet.profit} | Total Return: $${bet.total}<br>
-              🕒 Date: ${bet.timestamp?.toDate().toLocaleString() || '—'}
+            <div class="bet-entry">
+              <strong>User:</strong> ${bet.user}<br>
+              <strong>Type:</strong> ${bet.betType} | <strong>Amount:</strong> $${bet.betAmount} | <strong>Odds:</strong> ${bet.odds}<br>
+              <strong>Profit:</strong> $${bet.profit} | <strong>Total:</strong> $${bet.total}<br>
+              <strong>Date:</strong> ${bet.timestamp?.toDate().toLocaleString() || '—'}
             </div>
           `;
         }).join("");
