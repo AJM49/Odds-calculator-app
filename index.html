@@ -4,151 +4,234 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Horse Odds Calculator</title>
-  <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="favicon.ico" />
-  <link rel="manifest" href="manifest.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log("✅ Service Worker registered"));
-  }
-</script>
-
+  <style>
+    :root {
+      --primary: #4CAF50;
+      --bg: #f9f9f9;
+      --text: #333;
+      --border: #ddd;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 1rem;
+    }
+    header {
+      text-align: center;
+      padding-bottom: 1rem;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.25rem;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+    }
+    button {
+      background-color: var(--primary);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result, #betInfo {
+      margin-top: 1.25rem;
+      font-weight: bold;
+      text-align: center;
+    }
+    #betInfo {
+      font-size: 0.9rem;
+      color: #555;
+      font-weight: normal;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+    }
+  </style>
 </head>
-  <main class="card">
-  <h1>Horse Odds Calculator</h1>
+<body>
+  <header>
+    <h1>Horse Odds Calculator</h1>
+  </header>
 
-  <div id="authSection">
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="signUp()">Sign Up</button>
-    <button onclick="signIn()">Sign In</button>
-    <button onclick="signOut()">Sign Out</button>
-    <p id="authStatus"></p>
+  <div class="container">
+    <label for="betMode">Select Bet Type:</label>
+    <select id="betMode">
+      <option value="win">Win</option>
+      <option value="place">Place</option>
+      <option value="show">Show</option>
+      <option value="exacta">Exacta</option>
+      <option value="exacta_box">Exacta Box</option>
+      <option value="trifecta">Trifecta</option>
+      <option value="trifecta_box">Trifecta Box</option>
+      <option value="trifecta_key">Trifecta Key</option>
+      <option value="superfecta">Superfecta</option>
+      <option value="daily_double">Daily Double</option>
+      <option value="pick3">Pick 3</option>
+      <option value="pick4">Pick 4</option>
+      <option value="pick5">Pick 5</option>
+      <option value="pick6">Pick 6</option>
+    </select>
+
+    <label for="betAmount">Bet Amount ($):</label>
+    <input type="number" id="betAmount" min="0.5" step="0.1" placeholder="e.g. 2.00" />
+
+    <label for="oddsInput">Enter Odds (e.g., 9/5):</label>
+    <input type="text" id="oddsInput" placeholder="e.g. 9/5" />
+
+    <label for="trackInput">Track Code:</label>
+    <input type="text" id="trackInput" value="BEL" />
+
+    <label for="raceDate">Race Date:</label>
+    <input type="date" id="raceDate" value="2025-07-25" />
+
+    <button type="button" onclick="calculateOdds()">Calculate</button>
+    <button type="button" onclick="fetchPayoutDataFromInputs()">🔍 Fetch Live Odds</button>
+    <button type="button" onclick="shareBet()">🔗 Share This Bet</button>
+
+    <div class="result" id="result"></div>
+    <p id="betInfo"></p>
   </div>
 
-  <label for="betMode">Select Bet Type:</label>
-  <select id="betMode">
-  <option value="win">Win</option>
-  <option value="place">Place</option>
-  <option value="show">Show</option>
-  <option value="exacta">Exacta</option>
-  <option value="exacta_box">Exacta Box</option>
-  <option value="trifecta">Trifecta</option>
-  <option value="trifecta_box">Trifecta Box</option>
-  <option value="trifecta_key">Trifecta Key</option>
-  <option value="superfecta">Superfecta</option>
-  <option value="daily_double">Daily Double</option>
-  <option value="pick3">Pick 3</option>
-  <option value="pick4">Pick 4</option>
-  <option value="pick5">Pick 5</option>
-  <option value="pick6">Pick 6</option>
-</select>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-  <input type="number" id="betAmount" placeholder="Bet Amount ($)" min="0.5" step="0.1" />
-  <input type="text" id="oddsInput" placeholder="Enter Odds (e.g., 9/5)" />
-  <input type="text" id="trackInput" placeholder="Track Code" value="BEL" />
-  <input type="date" id="raceDate" value="2025-07-24" />
+  <script>
+    // Firebase Config — make sure your values are correct
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-  <button onclick="calculateOdds()">Calculate</button>
-  <button onclick="fetchPayoutDataFromInputs()">Fetch Live Odds</button>
-  <button id="shareBtn" class="share-button">Share This Bet</button>
+    function calculateOdds() {
+      const betType = document.getElementById('betMode').value;
+      const betAmount = parseFloat(document.getElementById('betAmount').value);
+      const oddsInput = document.getElementById('oddsInput').value;
+      const resultDiv = document.getElementById('result');
+      const betInfoDiv = document.getElementById('betInfo');
 
-  <div id="result"></div>
-    <p id="betInfo" style="font-size: 0.85rem; color: #6b7280;"></p>
-    
-    <!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+      if (!betAmount || !oddsInput.includes('/')) {
+        resultDiv.innerHTML = "❌ Enter a valid bet amount and odds (e.g. 5/2)";
+        betInfoDiv.innerHTML = "";
+        return;
+      }
 
-<!-- Custom JS -->
-function calculateOdds() {
-  const betType = document.getElementById('betMode').value;
-  const betAmount = parseFloat(document.getElementById('betAmount').value);
-  const oddsInput = document.getElementById('oddsInput').value;
-  const resultDiv = document.getElementById('result');
-  const betInfoDiv = document.getElementById('betInfo');
+      const [num, denom] = oddsInput.split('/').map(Number);
+      const decimalOdds = num / denom;
 
-  if (!betAmount || !oddsInput.includes('/')) {
-    resultDiv.innerHTML = "❌ Enter a valid bet amount and odds (e.g. 5/2)";
-    betInfoDiv.innerHTML = "";
-    return;
-  }
+      const multiplierMap = {
+        win: 1,
+        place: 0.5,
+        show: 0.33,
+        exacta: 2,
+        exacta_box: 2.4,
+        trifecta: 3,
+        trifecta_box: 6,
+        trifecta_key: 3,
+        superfecta: 4,
+        daily_double: 2,
+        pick3: 3,
+        pick4: 4,
+        pick5: 5,
+        pick6: 6
+      };
 
-  const [num, denom] = oddsInput.split('/').map(Number);
-  const decimalOdds = num / denom;
+      const descriptions = {
+        exacta_box: "Boxing 2 horses = 2 combinations (1-2, 2-1)",
+        trifecta_box: "Boxing 3 horses = 6 combinations",
+        trifecta_key: "Keying 1 horse with 2 others = 3 combinations",
+        daily_double: "Pick winners of 2 races",
+        pick3: "Pick winners of 3 races",
+        pick4: "Pick winners of 4 races",
+        pick5: "Pick winners of 5 races",
+        pick6: "Pick winners of 6 races"
+      };
 
-  const multiplierMap = {
-    win: 1,
-    place: 0.5,
-    show: 0.33,
-    exacta: 2,
-    exacta_box: 2.4,
-    trifecta: 3,
-    trifecta_box: 6,
-    trifecta_key: 3,
-    superfecta: 4,
-    daily_double: 2,
-    pick3: 3,
-    pick4: 4,
-    pick5: 5,
-    pick6: 6
-  };
+      const multiplier = multiplierMap[betType] || 1;
+      const grossProfit = betAmount * decimalOdds * multiplier;
+      const totalReturn = betAmount + grossProfit;
+      const breakEvenOdds = (1 / multiplier).toFixed(2);
+      const profitOrLoss = grossProfit <= 0 ? '🔴 Loss' : '🟢 Profit';
+      const warning = grossProfit < 0.5 ? "⚠️ Odds may be too low to profit from this wager." : "";
 
-  const descriptions = {
-    exacta_box: "Boxing 2 horses = 2 combinations (1-2, 2-1)",
-    trifecta_box: "Boxing 3 horses = 6 combinations",
-    trifecta_key: "Keying 1 horse with 2 others = 3 combinations",
-    daily_double: "Pick winners of 2 races",
-    pick3: "Pick winners of 3 races",
-    pick4: "Pick winners of 4 races",
-    pick5: "Pick winners of 5 races",
-    pick6: "Pick winners of 6 races"
-  };
+      resultDiv.innerHTML = `
+        💸 Type: <b>${betType}</b><br>
+        📊 Decimal Odds: <b>${decimalOdds.toFixed(2)}</b><br>
+        💰 Gross Profit: <b>$${grossProfit.toFixed(2)}</b><br>
+        💵 Total Return: <b>$${totalReturn.toFixed(2)}</b><br>
+        📈 Break-even Odds: <b>${breakEvenOdds}</b><br>
+        ✅ ${profitOrLoss}<br>
+        ${warning}
+      `;
 
-  const multiplier = multiplierMap[betType] || 1;
-  const grossProfit = betAmount * decimalOdds * multiplier;
-  const totalReturn = betAmount + grossProfit;
-  const breakEvenOdds = (1 / multiplier).toFixed(2);
-  const profitOrLoss = grossProfit <= 0 ? '🔴 Loss' : '🟢 Profit';
-  const warning = grossProfit < 0.5 ? "⚠️ Odds may be too low to profit from this wager." : "";
+      betInfoDiv.innerText = descriptions[betType] || "";
 
-  resultDiv.innerHTML = `
-    💸 Type: <b>${betType}</b><br>
-    📊 Decimal Odds: <b>${decimalOdds.toFixed(2)}</b><br>
-    💰 Gross Profit: <b>$${grossProfit.toFixed(2)}</b><br>
-    💵 Total Return: <b>$${totalReturn.toFixed(2)}</b><br>
-    📈 Break-even Odds: <b>${breakEvenOdds}</b><br>
-    ✅ ${profitOrLoss}<br>
-    ${warning}
-  `;
+      logBetToFirestore({
+        betType,
+        amount: betAmount,
+        odds: oddsInput,
+        profit: grossProfit.toFixed(2),
+        total: totalReturn.toFixed(2),
+        timestamp: new Date(),
+      });
+    }
 
-  betInfoDiv.innerText = descriptions[betType] || "";
+    function fetchPayoutDataFromInputs() {
+      const track = document.getElementById('trackInput').value;
+      const date = document.getElementById('raceDate').value;
 
-  // Optional Firebase logging
-  if (typeof logBetToFirestore === 'function') {
-    logBetToFirestore({
-      betType,
-      amount: betAmount,
-      odds: oddsInput,
-      profit: grossProfit.toFixed(2),
-      total: totalReturn.toFixed(2),
-      timestamp: new Date(),
-    });
-  }
-}
+      // Mock odds fetch – replace with real API call if available
+      const oddsOptions = ["5/2", "9/5", "7/2", "3/1"];
+      const random = Math.floor(Math.random() * oddsOptions.length);
+      const odds = oddsOptions[random];
 
-</body>
-</html>
+      document.getElementById('oddsInput').value = odds;
+      alert(`📡 Odds loaded for ${track} on ${date}: ${odds}`);
+    }
 
-  const firebaseConfig = {
-  apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
-  authDomain: "horse-bet-calculator.firebaseapp.com",
-  projectId: "horse-bet-calculator",
-  appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
-};
-    
+    function shareBet() {
+      const bet = document.getElementById('betMode').value;
+      const amount = document.getElementById('betAmount').value;
+      const odds = document.getElementById('oddsInput').value;
+      const shareURL = `${window.location.origin}${window.location.pathname}?bet=${bet}&amount=${amount}&odds=${odds}`;
+      navigator.clipboard.writeText(shareURL)
+        .then(() => alert('✅ Link copied to clipboard!'))
+        .catch(() => alert('🔗 Share this link:\n' + shareURL));
+    }
+
+    function logBetToFirestore(data) {
+      db.collection("bets").add(data)
+        .then(() => console.log("📤 Bet logged"))
+        .catch((error) => console.error("❌ Firestore error:", error));
+    }
   </script>
-  </main>
+</body>
 </html>
