@@ -13,15 +13,16 @@
     <h1>Horse Odds Calculator</h1>
   </header>
 
-  <div class="container">
-    <!-- 🔐 Auth Form -->
-    <div class="auth-container">
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
-      <button onclick="signUp()">Sign Up</button>
-      <button onclick="signIn()">Sign In</button>
-      <button onclick="signOut()">Sign Out</button>
-    </div>
+<div id="authSection">
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="signUp()">Sign Up</button>
+  <button onclick="signIn()">Sign In</button>
+  <button onclick="signOut()">Sign Out</button>
+  <button onclick="sendResetEmail()">Reset Password</button>
+</div>
+<p id="authStatus"></p>
+
 
     <div id="authSection">
   <input type="email" id="email" placeholder="Email">
