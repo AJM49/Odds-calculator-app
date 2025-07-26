@@ -1,22 +1,23 @@
-self.addEventListener("install", event => {
+const CACHE_NAME = 'odds-calculator-cache-v1';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.ico',
+  '/style.css',
+  '/app.js'
+];
+
+// Install
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open("odds-cache").then(cache => {
-      return cache.addAll([
-        "./",
-        "./index.html",
-        "./style.css",
-        "./app.js",
-        "./manifest.json",
-        "./favicon.ico"
-      ]);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
-self.addEventListener("fetch", event => {
+// Fetch
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(resp => {
-      return resp || fetch(event.request);
-    })
+    caches.match(event.request).then(response => response || fetch(event.request))
   );
 });
