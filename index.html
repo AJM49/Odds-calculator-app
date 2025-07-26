@@ -45,7 +45,6 @@
   <option value="pick6">Pick 6</option>
 </select>
 
-
   <input type="number" id="betAmount" placeholder="Bet Amount ($)" min="0.5" step="0.1" />
   <input type="text" id="oddsInput" placeholder="Enter Odds (e.g., 9/5)" />
   <input type="text" id="trackInput" placeholder="Track Code" value="BEL" />
@@ -57,18 +56,40 @@
 
   <div id="result"></div>
     <p id="betInfo" style="font-size: 0.85rem; color: #6b7280;"></p>
-
-
+    
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="app.js">
+    <!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<!-- Custom JS -->
+<script>
+  // ⬇️ Your calculateOdds function is here
+  function calculateOdds() {
+    const betType = document.getElementById('betMode').value;
+    const betAmount = parseFloat(document.getElementById('betAmount').value);
+    const oddsInput = document.getElementById('oddsInput').value;
+    const resultDiv = document.getElementById('result');
+
+    // odds logic here...
+  }
+
+  // more functions like signIn(), signOut(), fetchPayoutData()...
+</script>
+</body>
+</html>
+
   const firebaseConfig = {
   apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
   authDomain: "horse-bet-calculator.firebaseapp.com",
   projectId: "horse-bet-calculator",
   appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
 };
+    
   </script>
   </main>
 </html>
