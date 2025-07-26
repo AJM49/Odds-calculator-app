@@ -13,31 +13,40 @@ function signUp() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   auth.createUserWithEmailAndPassword(email, password)
-    .then(() => alert("Signed up!"))
-    .catch(error => alert(error.message));
+    .then(user => {
+      alert("✅ Signed up!");
+      auth.currentUser.sendEmailVerification()
+        .then(() => alert("📧 Verification email sent. Please check your inbox."));
+    })
+    .catch(error => alert("❌ " + error.message));
 }
 
 function signIn() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   auth.signInWithEmailAndPassword(email, password)
-    .then(() => document.getElementById("authStatus").innerText = "Logged in as " + email)
-    .catch(error => alert(error.message));
+    .then(user => document.getElementById("authStatus").innerText = "🔓 Logged in as " + email)
+    .catch(error => alert("❌ " + error.message));
 }
 
 function signOut() {
   auth.signOut()
-    .then(() => document.getElementById("authStatus").innerText = "Logged out")
-    .catch(error => alert(error.message));
+    .then(() => document.getElementById("authStatus").innerText = "🔒 Logged out")
+    .catch(error => alert("❌ " + error.message));
 }
 
-  function calculateOdds() {
-    const betType = document.getElementById('betMode').value;
-    const betAmount = parseFloat(document.getElementById('betAmount').value);
-    const oddsInput = document.getElementById('oddsInput').value;
-    const resultDiv = document.getElementById('result');
+function sendResetEmail() {
+  const email = document.getElementById("email").value;
+  auth.sendPasswordResetEmail(email)
+    .then(() => alert("📩 Password reset email sent."))
+    .catch(err => alert("❌ " + err.message));
+}
 
-document.getElementById("betInfo").innerText = descriptions[betType] || "";
+function calculateOdds() {
+  const betType = document.getElementById('betMode').value;
+  const betAmount = parseFloat(document.getElementById('betAmount').value);
+  const oddsInput = document.getElementById('oddsInput').value;
+  const resultDiv = document.getElementById('result');
 
   if (!betAmount || !oddsInput.includes('/')) {
     resultDiv.innerHTML = "❌ Enter a valid bet amount and odds (e.g. 5/2)";
@@ -45,79 +54,82 @@ document.getElementById("betInfo").innerText = descriptions[betType] || "";
   }
 
   const [num, denom] = oddsInput.split('/').map(Number);
-  const decimalOdds = num / denom;
+  const odds = num / denom;
 
- const multiplierMap = {
-  win: 1,
-  place: 0.5,
-  show: 0.33,
-  exacta: 2,
-  exacta_box: 2.4,          // slightly more cost due to boxing
-  trifecta: 3,
-  trifecta_box: 6,          // 3 horses = 6 combos
-  trifecta_key: 3,          // key with 2 others
-  superfecta: 4,
-  daily_double: 2,
-  pick3: 3,
-  pick4: 4,
-  pick5: 5,
-  pick6: 6
-};
+  let multiplier = 1;
+  if (betType === "exacta") multiplier = 2;
+  else if (betType === "trifecta") multiplier = 3;
+  else if (betType === "superfecta") multiplier = 4;
 
+  const profit = betAmount * odds * multiplier;
+  const total = betAmount + profit;
 
-  const multiplier = multiplierMap[betType] || 1;
-const grossProfit = betAmount * decimalOdds * multiplier;
-const totalReturn = betAmount + grossProfit;
+  resultDiv.innerHTML = `💰 Profit: $${profit.toFixed(2)}<br>Total Return: $${total.toFixed(2)}`;
 
-  const totalReturn = betAmount + grossProfit;
-  const breakEvenOdds = (1 / multiplier).toFixed(2);
-  const profitOrLoss = grossProfit <= 0 ? '🔴 Loss' : '🟢 Profit';
-
-  // Warning if low return
-  const warning = (grossProfit < 0.5)
-    ? "⚠️ Odds may be too low to profit from this wager."
-    : "";
-
-  resultDiv.innerHTML = `
-    💸 Type: <b>${betType}</b><br>
-    📊 Decimal Odds: <b>${decimalOdds.toFixed(2)}</b><br>
-    💰 Gross Profit: <b>$${grossProfit.toFixed(2)}</b><br>
-    💵 Total Return: <b>$${totalReturn.toFixed(2)}</b><br>
-    📈 Break-even Odds: <b>${breakEvenOdds}</b><br>
-    ✅ ${profitOrLoss}<br>
-    ${warning}
-  `;
-
-  // Optional: log to Firestore
-  if (typeof logBetToFirestore === 'function') {
-    logBetToFirestore({
-      betType,
-      amount: betAmount,
-      odds: oddsInput,
-      profit: grossProfit.toFixed(2),
-      total: totalReturn.toFixed(2),
-      timestamp: new Date(),
-    });
-  }
+  logBetToFirestore({
+    type: betType,
+    amount: betAmount,
+    odds: oddsInput,
+    date: new Date().toISOString()
+  });
 }
 
+function logBetToFirestore(betData) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
 
-document.getElementById("shareBtn").addEventListener("click", () => {
-  const bet = document.getElementById("betMode").value;
-  const amount = document.getElementById("betAmount").value;
-  const odds = document.getElementById("oddsInput").value;
+  db.collection("bets").doc(user.uid).collection("entries").add(betData)
+    .then(() => console.log("✅ Bet saved"))
+    .catch(err => console.error("❌ Error saving bet:", err));
+}
+
+function loadBetHistory() {
+  const user = firebase.auth().currentUser;
+  const historyDiv = document.getElementById("historySection");
+  historyDiv.innerHTML = "<p>Loading history...</p>";
+
+  if (!user) {
+    historyDiv.innerHTML = "❌ You must be signed in.";
+    return;
+  }
+
+  db.collection("bets").doc(user.uid).collection("entries")
+    .orderBy("date", "desc")
+    .limit(10)
+    .get()
+    .then(snapshot => {
+      if (snapshot.empty) {
+        historyDiv.innerHTML = "<p>🕵️ No bets found.</p>";
+        return;
+      }
+      let html = "<ul>";
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        html += `<li>${d.type} | $${d.amount} @ ${d.odds} | ${new Date(d.date).toLocaleString()}</li>`;
+      });
+      html += "</ul>";
+      historyDiv.innerHTML = html;
+    })
+    .catch(err => {
+      console.error("❌ Error fetching history:", err);
+      historyDiv.innerHTML = "<p>Error loading history.</p>";
+    });
+}
+
+document.getElementById('shareBtn').addEventListener('click', () => {
+  const bet = document.getElementById('betMode').value;
+  const amount = document.getElementById('betAmount').value;
+  const odds = document.getElementById('oddsInput').value;
   const shareURL = `${window.location.origin}${window.location.pathname}?bet=${bet}&amount=${amount}&odds=${odds}`;
-  navigator.clipboard.writeText(shareURL).then(() => alert("Link copied to clipboard!"));
+  navigator.clipboard.writeText(shareURL)
+    .then(() => alert('✅ Link copied to clipboard!'))
+    .catch(() => alert('🔗 Here is your link:\\n' + shareURL));
 });
 
 function fetchPayoutDataFromInputs() {
-  const track = document.getElementById("trackInput").value;
-  const date = document.getElementById("raceDate").value;
-  fetchPayoutData(track, date);
-}
-
-function fetchPayoutData(trackCode = '', date = '2025-07-25') {
-  const mockOdds = "5/2";
-  document.getElementById("oddsInput").value = mockOdds;
-  alert(`Mock odds loaded for ${trackCode} on ${date}: ${mockOdds}`);
+  const track = document.getElementById('trackInput').value;
+  const date = document.getElementById('raceDate').value;
+  const mockOdds = "9/2";
+  document.getElementById('oddsInput').value = mockOdds;
+  alert(`📡 Mock odds loaded for ${track} on ${date}: ${mockOdds}`);
 }
