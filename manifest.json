@@ -1,9 +1,9 @@
 {
   "name": "Horse Odds Calculator",
   "short_name": "OddsCalc",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#f4f4f4",
+  "background_color": "#ffffff",
   "theme_color": "#4CAF50",
   "icons": [
     {
