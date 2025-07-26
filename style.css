@@ -1,95 +1,81 @@
 /* style.css */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', sans-serif;
-  background: #f1f5f9;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-}
-
-main.card {
-  background: #ffffff;
-  max-width: 500px;
-  width: 100%;
-  margin: 40px auto;
-  padding: 30px 25px;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-}
-
-h1 {
-  text-align: center;
-  color: #111827;
-  margin-bottom: 25px;
-}
-
-label {
-  margin-top: 15px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #374151;
-  display: block;
-}
-
-input, select {
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  margin-top: 5px;
-  box-sizing: border-box;
-}
-
-button {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: 12px;
-  margin-top: 20px;
-  width: 100%;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #1e40af;
-}
-
-#result {
-  margin-top: 25px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #065f46;
-  text-align: center;
-}
-
-.share-button {
-  margin-top: 10px;
-  background-color: #10b981;
-}
-
-.share-button:hover {
-  background-color: #047857;
-}
-
-#authSection {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-#authStatus {
-  font-size: 0.9rem;
-  color: #6b7280;
-  text-align: center;
-  margin-top: 5px;
-}
+ <style>
+    :root {
+      --primary: #4CAF50;
+      --bg: #f9f9f9;
+      --text: #333;
+      --border: #ddd;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 1rem;
+    }
+    header {
+      text-align: center;
+      padding-bottom: 1rem;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.25rem;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+    }
+    button {
+      background-color: var(--primary);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result, #betInfo {
+      margin-top: 1.25rem;
+      font-weight: bold;
+      text-align: center;
+    }
+    #betInfo {
+      font-size: 0.9rem;
+      color: #555;
+      font-weight: normal;
+    }
+    #authStatus {
+      text-align: center;
+      margin-top: 1rem;
+      color: #555;
+      font-size: 0.9rem;
+    }
+    .auth-container {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+    }
+  </style>
