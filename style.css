@@ -1,81 +1,27 @@
-/* style.css */
-/*@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap'); */
-
- <style>
-    :root {
-      --primary: #4CAF50;
-      --bg: #f9f9f9;
-      --text: #333;
-      --border: #ddd;
-    }
+<style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 1rem;
-    }
-    header {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
       text-align: center;
-      padding-bottom: 1rem;
-    }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin-top: 1rem;
-      font-weight: 600;
     }
     input, select, button {
-      width: 100%;
-      padding: 0.6rem;
-      margin-top: 0.25rem;
+      margin: 10px;
+      padding: 10px;
       font-size: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 5px;
     }
-    button {
-      background-color: var(--primary);
+    .share-button {
+      background-color: #4CAF50;
       color: white;
-      font-weight: bold;
+      border: none;
+      padding: 10px 15px;
+      margin-top: 10px;
+      border-radius: 8px;
+      font-size: 1rem;
       cursor: pointer;
-      margin-top: 1rem;
+      transition: background-color 0.3s ease;
     }
-    button:hover {
+    .share-button:hover {
       background-color: #45a049;
-    }
-    .result, #betInfo {
-      margin-top: 1.25rem;
-      font-weight: bold;
-      text-align: center;
-    }
-    #betInfo {
-      font-size: 0.9rem;
-      color: #555;
-      font-weight: normal;
-    }
-    #authStatus {
-      text-align: center;
-      margin-top: 1rem;
-      color: #555;
-      font-size: 0.9rem;
-    }
-    .auth-container {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-    @media (max-width: 600px) {
-      .container {
-        padding: 1rem;
-      }
     }
   </style>
