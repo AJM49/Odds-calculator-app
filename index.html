@@ -7,65 +7,60 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="favicon.ico" />
+  <!-- Firebase SDKs: Using compatibility versions for broader browser support -->
   <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- Main application logic should be deferred -->
   <script defer src="app.js"></script>
 </head>
 <body>
   <h1>🐎 Horse Odds Calculator</h1>
-  <div>
-    <select id="betMode">
-      <option value="win">Win</option>
-      <option value="place">Place</option>
-      <option value="show">Show</option>
-      <option value="exacta">Exacta</option>
-      <option value="exacta_box">Exacta Box</option>
-      <option value="trifecta">Trifecta</option>
-      <option value="trifecta_key">Trifecta Key</option>
-      <option value="superfecta">Superfecta</option>
-      <option value="pick3">Pick 3</option>
-      <option value="pick4">Pick 4</option>
-      <option value="pick5">Pick 5</option>
-      <option value="pick6">Pick 6</option>
-    </select><br/>
-    <input type="number" id="betAmount" placeholder="Enter amount (min $0.50)" min="0.5" step="0.01" /><br/>
-    <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" /><br/>
-    <button onclick="calculateOdds()">Calculate</button>
-    <button class="share-button" id="shareBtn">Share Bet</button>
-    <button onclick="fetchPayoutDataFromInputs()">Fetch Live Odds (Mock)</button>
+  <form id="bettingForm">
+    <div class="form-group">
+      <label for="betMode">Bet Mode:</label>
+      <select id="betMode">
+        <option value="win">Win</option>
+        <option value="place">Place</option>
+        <option value="show">Show</option>
+        <option value="exacta">Exacta</option>
+        <option value="exacta_box">Exacta Box</option>
+        <option value="trifecta">Trifecta</option>
+        <option value="trifecta_key">Trifecta Key</option>
+        <option value="superfecta">Superfecta</option>
+        <option value="pick3">Pick 3</option>
+        <option value="pick4">Pick 4</option>
+        <option value="pick5">Pick 5</option>
+        <option value="pick6">Pick 6</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="betAmount">Bet Amount (min $0.50):</label>
+      <input type="number" id="betAmount" placeholder="Enter amount (min $0.50)" min="0.5" step="0.01" />
+    </div>
+
+    <div class="form-group">
+      <label for="oddsInput">Odds (e.g. 5/2):</label>
+      <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" />
+    </div>
+
+    <div class="form-actions">
+      <button type="button" id="calculateBtn">Calculate</button>
+      <button type="button" class="share-button" id="shareBtn">Share Bet</button>
+      <button type="button" id="fetchPayoutBtn">Fetch Live Odds (Mock)</button>
+    </div>
     <div id="result"></div>
-  </div>
+  </form>
 
   <h3>📜 History</h3>
-  <button onclick="loadBetHistory()">Load Bet History</button>
+  <button type="button" id="loadHistoryBtn">Load Bet History</button>
   <div id="historySection"></div>
 
+  <!-- The authentication UI for signing up/in/out should ideally be on a dedicated login/authentication page. -->
+  <!-- On a protected page, only the user's authentication status might be displayed. -->
   <h3>🔐 Auth</h3>
-  <input type="email" id="email" placeholder="Email" />
-  <input type="password" id="password" placeholder="Password" />
-  <button onclick="signUp()">Sign Up</button>
-  <button onclick="signIn()">Sign In</button>
-  <button onclick="signOut()">Sign Out</button>
-  <button onclick="sendVerificationEmail()">Verify Email</button>
-  <button onclick="resetPassword()">Reset Password</button>
   <div id="authStatus">Not logged in</div>
 
-  <script>
-    
-  firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-      window.location.href = "login.html";
-    }
-  });
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log("✅ Service Worker registered!", reg))
-          .catch(err => console.error("❌ Service Worker registration failed:", err));
-      });
-    }
-  </script>
 </body>
 </html>
