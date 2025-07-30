@@ -4,82 +4,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Horse Odds Calculator</title>
-  <link rel="icon" href="favicon.ico" />
-  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
-  <meta name="theme-color" content="#4CAF50" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="favicon.ico" />
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script defer src="app.js"></script>
 </head>
 <body>
-  <h1>Horse Odds Calculator</h1>
-
-  <div id="authSection">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="signUp()">Sign Up</button>
-    <button onclick="signIn()">Sign In</button>
-    <button onclick="signOut()">Sign Out</button>
-    <button onclick="sendResetEmail()">Reset Password</button>
+  <h1>🐎 Horse Odds Calculator</h1>
+  <div>
+    <select id="betMode">
+      <option value="win">Win</option>
+      <option value="place">Place</option>
+      <option value="show">Show</option>
+      <option value="exacta">Exacta</option>
+      <option value="exacta_box">Exacta Box</option>
+      <option value="trifecta">Trifecta</option>
+      <option value="trifecta_key">Trifecta Key</option>
+      <option value="superfecta">Superfecta</option>
+      <option value="pick3">Pick 3</option>
+      <option value="pick4">Pick 4</option>
+      <option value="pick5">Pick 5</option>
+      <option value="pick6">Pick 6</option>
+    </select><br/>
+    <input type="number" id="betAmount" placeholder="Enter amount (min $0.50)" min="0.5" step="0.01" /><br/>
+    <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" /><br/>
+    <button onclick="calculateOdds()">Calculate</button>
+    <button class="share-button" id="shareBtn">Share Bet</button>
+    <button onclick="fetchPayoutDataFromInputs()">Fetch Live Odds (Mock)</button>
+    <div id="result"></div>
   </div>
-  <p id="authStatus"></p>
 
- <select id="betMode">
-  <option value="win">Win</option>
-  <option value="place">Place</option>
-  <option value="show">Show</option>
-  <option value="exacta">Exacta</option>
-  <option value="exacta_box">Exacta Box</option>
-  <option value="trifecta">Trifecta</option>
-  <option value="trifecta_key">Trifecta Key</option>
-  <option value="superfecta">Superfecta</option>
-  <option value="pick3">Pick 3</option>
-  <option value="pick4">Pick 4</option>
-  <option value="pick5">Pick 5</option>
-  <option value="pick6">Pick 6</option>
-</select>
+  <h3>📜 History</h3>
+  <button onclick="loadBetHistory()">Load Bet History</button>
+  <div id="historySection"></div>
 
+  <h3>🔐 Auth</h3>
+  <input type="email" id="email" placeholder="Email" />
+  <input type="password" id="password" placeholder="Password" />
+  <button onclick="signUp()">Sign Up</button>
+  <button onclick="signIn()">Sign In</button>
+  <button onclick="signOut()">Sign Out</button>
+  <button onclick="sendVerificationEmail()">Verify Email</button>
+  <button onclick="resetPassword()">Reset Password</button>
+  <div id="authStatus">Not logged in</div>
 
-  <label for="betAmount">Bet Amount ($):</label>
-  <input type="number" id="betAmount" min="0.5" step="0.1" placeholder="e.g. 2.00">
-
-  <label for="oddsInput">Enter Odds (e.g., 9/5):</label>
-  <input type="text" id="oddsInput" placeholder="e.g. 9/5">
-
-  <label for="trackInput">Track Code:</label>
-  <input type="text" id="trackInput" value="BEL">
-
-  <label for="raceDate">Race Date:</label>
-  <input type="date" id="raceDate" value="2025-07-24">
-
-  <br>
-  <button type="button" onclick="calculateOdds()">Calculate</button>
-  <button type="button" onclick="fetchPayoutDataFromInputs()">🔍 Fetch Live Odds</button>
-  <button type="button" id="shareBtn" class="share-button">🔗 Share This Bet</button>
-
-  <div id="result" style="margin-top:20px; font-weight: bold;"></div>
-  <hr />
-  <button onclick="loadBetHistory()">📜 View My Bet History</button>
-  <div id="historySection" style="margin-top: 10px;"></div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="app.js">
-    const firebaseConfig = {
-  apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
-  authDomain: "horse-bet-calculator.firebaseapp.com",
-  projectId: "horse-bet-calculator",
-  appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
-};
-    <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log("✅ Service Worker registered!", reg))
-        .catch(err => console.error("❌ Service Worker registration failed:", err));
-    });
-  }
-</script>
-
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log("✅ Service Worker registered!", reg))
+          .catch(err => console.error("❌ Service Worker registration failed:", err));
+      });
+    }
   </script>
 </body>
 </html>
