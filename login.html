@@ -2,15 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Login</title>
+  <title>Login / Sign Up</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-  <h1>Login to Horse Odds Calculator</h1>
+  <h1>🐎 Horse Odds Calculator Login</h1>
+  
   <input type="email" id="email" placeholder="Email" />
-  <input type="password" id="password" placeholder="Password" />
+  <input type="password" id="password" placeholder="Password" /><br/><br/>
+
   <button onclick="signIn()">Login</button>
+  <button onclick="signUp()">Sign Up</button><br/><br/>
+  <button onclick="sendVerificationEmail()">Send Verification Email</button>
+  <button onclick="resetPassword()">Forgot Password</button>
+
+  <p id="message" style="color: red;"></p>
 
   <script>
     const firebaseConfig = {
@@ -20,19 +27,66 @@
       appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
     };
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    const msg = (text, color = "red") => {
+      const m = document.getElementById("message");
+      m.innerText = text;
+      m.style.color = color;
+    };
 
     function signIn() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
 
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(() => {
-          window.location.href = "index.html"; // redirect on success
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCred) => {
+          if (!userCred.user.emailVerified) {
+            msg("Please verify your email first.");
+            return;
+          }
+          window.location.href = "index.html"; // Go to app
         })
         .catch((error) => {
-          alert("Login failed: " + error.message);
+          msg("Login failed: " + error.message);
           console.error(error);
         });
+    }
+
+    function signUp() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCred) => {
+          msg("Account created! Now click 'Send Verification Email'.", "green");
+        })
+        .catch((error) => {
+          msg("Sign up failed: " + error.message);
+        });
+    }
+
+    function sendVerificationEmail() {
+      const user = auth.currentUser;
+      if (user) {
+        user.sendEmailVerification()
+          .then(() => msg("Verification email sent!"))
+          .catch((error) => msg("Error: " + error.message));
+      } else {
+        msg("You must be signed in to send verification.");
+      }
+    }
+
+    function resetPassword() {
+      const email = document.getElementById("email").value;
+      if (!email) {
+        msg("Enter your email above first.");
+        return;
+      }
+
+      auth.sendPasswordResetEmail(email)
+        .then(() => msg("Password reset email sent!", "green"))
+        .catch((error) => msg("Error: " + error.message));
     }
   </script>
 </body>
