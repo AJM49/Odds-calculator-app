@@ -2,18 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Login - Horse Odds App</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Login</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-  <h1>Login to Horse Odds App 🐎</h1>
+  <h1>Login to Horse Odds Calculator</h1>
   <input type="email" id="email" placeholder="Email" />
   <input type="password" id="password" placeholder="Password" />
-  <button onclick="signIn()">Sign In</button>
-  <button onclick="resetPassword()">Forgot Password</button>
-  <div id="authStatus">Not logged in</div>
+  <button onclick="signIn()">Login</button>
 
   <script>
     const firebaseConfig = {
@@ -23,28 +20,20 @@
       appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
 
     function signIn() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, password)
+
+      firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => {
-          window.location.href = "index.html";
+          window.location.href = "index.html"; // redirect on success
         })
-        .catch(err => alert(err.message));
+        .catch((error) => {
+          alert("Login failed: " + error.message);
+          console.error(error);
+        });
     }
-
-    function resetPassword() {
-      const email = document.getElementById("email").value;
-      auth.sendPasswordResetEmail(email)
-        .then(() => alert("Reset link sent"))
-        .catch(err => alert(err.message));
-    }
-
-    auth.onAuthStateChanged(user => {
-      document.getElementById("authStatus").textContent = user ? `Logged in as ${user.email}` : "Not logged in";
-    });
   </script>
 </body>
 </html>
