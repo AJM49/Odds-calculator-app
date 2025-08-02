@@ -1,23 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <title>Login / Sign Up</title>
+  <title>Login - Horse Odds Calculator</title>
+  <link rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.css" />
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.js"></script>
 </head>
 <body>
-  <h1>🐎 Horse Odds Calculator Login</h1>
-  
-  <input type="email" id="email" placeholder="Email" />
-  <input type="password" id="password" placeholder="Password" /><br/><br/>
-
-  <button onclick="signIn()">Login</button>
-  <button onclick="signUp()">Sign Up</button><br/><br/>
-  <button onclick="sendVerificationEmail()">Send Verification Email</button>
-  <button onclick="resetPassword()">Forgot Password</button>
-
-  <p id="message" style="color: red;"></p>
+  <h1>🐎 Welcome to Horse Odds Calculator</h1>
+  <div id="firebaseui-auth-container"></div>
 
   <script>
     const firebaseConfig = {
@@ -27,67 +20,20 @@
       appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+    const ui = new firebaseui.auth.AuthUI(firebase.auth());
 
-    const msg = (text, color = "red") => {
-      const m = document.getElementById("message");
-      m.innerText = text;
-      m.style.color = color;
+    const uiConfig = {
+      signInOptions: [firebase.auth.EmailAuthProvider.PROVIDER_ID],
+      callbacks: {
+        signInSuccessWithAuthResult: function() {
+          window.location.href = "index.html"; // ✅ Redirect to app
+          return false;
+        }
+      },
+      signInFlow: 'popup'
     };
 
-    function signIn() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      auth.signInWithEmailAndPassword(email, password)
-        .then((userCred) => {
-          if (!userCred.user.emailVerified) {
-            msg("Please verify your email first.");
-            return;
-          }
-          window.location.href = "index.html"; // Go to app
-        })
-        .catch((error) => {
-          msg("Login failed: " + error.message);
-          console.error(error);
-        });
-    }
-
-    function signUp() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      auth.createUserWithEmailAndPassword(email, password)
-        .then((userCred) => {
-          msg("Account created! Now click 'Send Verification Email'.", "green");
-        })
-        .catch((error) => {
-          msg("Sign up failed: " + error.message);
-        });
-    }
-
-    function sendVerificationEmail() {
-      const user = auth.currentUser;
-      if (user) {
-        user.sendEmailVerification()
-          .then(() => msg("Verification email sent!"))
-          .catch((error) => msg("Error: " + error.message));
-      } else {
-        msg("You must be signed in to send verification.");
-      }
-    }
-
-    function resetPassword() {
-      const email = document.getElementById("email").value;
-      if (!email) {
-        msg("Enter your email above first.");
-        return;
-      }
-
-      auth.sendPasswordResetEmail(email)
-        .then(() => msg("Password reset email sent!", "green"))
-        .catch((error) => msg("Error: " + error.message));
-    }
+    ui.start('#firebaseui-auth-container', uiConfig);
   </script>
 </body>
 </html>
