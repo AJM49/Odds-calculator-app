@@ -102,7 +102,7 @@ document.getElementById('shareBtn').addEventListener('click', () => {
   const bet = document.getElementById('betMode').value;
   const amount = document.getElementById('betAmount').value;
   const odds = document.getElementById('oddsInput').value;
-  const shareURL = \`\${window.location.origin}\${window.location.pathname}?bet=\${bet}&amount=\${amount}&odds=\${odds}\`;
+  const shareURL = \${window.location.origin}\${window.location.pathname}?bet=\${bet}&amount=\${amount}&odds=\${odds}\`;
   navigator.clipboard.writeText(shareURL)
     .then(() => alert('✅ Link copied to clipboard!'))
     .catch(() => alert('🔗 Here is your link:\n' + shareURL));
