@@ -72,7 +72,7 @@ function updateAuthUI(user) {
   }
 }
 
-// Authentication state listener
+Authentication state listener
 auth.onAuthStateChanged(user => {
   updateAuthUI(user);
 });
