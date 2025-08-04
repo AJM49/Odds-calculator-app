@@ -82,4 +82,44 @@ input:focus, select:focus, button:focus {
   h1 {
     font-size: 1.5rem;
   }
+  /* FirebaseUI Custom Theme for Horse Odds Calculator */
+.firebaseui-container, .firebaseui-card-content {
+  background-color: #f4f4f4;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.firebaseui-idp-button, .firebaseui-id-submit {
+  background-color: #552E30 !important;
+  color: white !important;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.firebaseui-idp-button:hover {
+  background-color: #3e2022 !important;
+}
+
+.firebaseui-title {
+  font-size: 1.5em;
+  color: #552E30;
+  text-align: center;
+}
+
+.firebaseui-text, .firebaseui-label {
+  color: #333;
+}
+
+#logo-header {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+#logo-header img {
+  width: 100px;
+  height: auto;
+}
+
 }
