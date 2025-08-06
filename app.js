@@ -1,3 +1,10 @@
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    window.location.href = "login.html"; // Redirect to login if not signed in
+  }
+});
+
 // Ensure Firebase SDK is imported before this script, e.g.:
  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
