@@ -1,10 +1,4 @@
 
-firebase.auth().onAuthStateChanged((user) => {
-  if (!user) {
-    window.location.href = "login.html"; // Redirect to login if not signed in
-  }
-});
-
 // Ensure Firebase SDK is imported before this script, e.g.:
  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -17,6 +11,19 @@ const firebaseConfig = {
   projectId: "horse-bet-calculator",
   appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
 };
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// 2. Redirect to login if not authenticated
+auth.onAuthStateChanged((user) => {
+  if (!user) {
+    window.location.href = "login.html";
+  } else {
+    console.log("✅ Logged in:", user.email);
+  }
+});
 
 // Initialize Firebase only if it hasn't been initialized already
 if (!firebase.apps.length) {
