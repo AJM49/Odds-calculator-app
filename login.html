@@ -8,8 +8,8 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script defer>
   <script>
+    // ✅ Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
       authDomain: "horse-bet-calculator.firebaseapp.com",
@@ -24,9 +24,11 @@
       const password = document.getElementById("password").value;
 
       try {
-        await firebase.auth().signInWithEmailAndPassword(email, password);
-        window.location.href = "index.html"; // ✅ redirect to main app
+        const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+        console.log("✅ Logged in as:", result.user.email);
+        window.location.href = "index.html";
       } catch (err) {
+        console.error("❌ Login error:", err);
         alert("Login failed: " + err.message);
       }
     }
@@ -34,9 +36,8 @@
 </head>
 <body>
   <h2>🐎 Horse Odds Calculator Login</h2>
-  <input type="email" id="email" placeholder="Email" />
-  <input type="password" id="password" placeholder="Password" />
+  <input type="email" id="email" placeholder="Email" /><br />
+  <input type="password" id="password" placeholder="Password" /><br />
   <button onclick="login()">Log In</button>
 </body>
 </html>
-    
