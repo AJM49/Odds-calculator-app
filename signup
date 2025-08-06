@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up - Horse Odds Calculator</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script>
+    // Firebase config (same as other pages)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
+      authDomain: "horse-bet-calculator.firebaseapp.com",
+      projectId: "horse-bet-calculator",
+      appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    async function signUp() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        console.log("✅ Sign up successful:", result.user.email);
+        alert("Account created! Please log in.");
+        window.location.href = "login.html";
+      } catch (err) {
+        console.error("❌ Sign up error:", err);
+        alert("Sign up failed: " + err.message);
+      }
+    }
+  </script>
+</head>
+<body>
+  <h2>🐎 Horse Odds Calculator - Sign Up</h2>
+  <input type="email" id="email" placeholder="Email" /><br />
+  <input type="password" id="password" placeholder="Password" /><br />
+  <button onclick="signUp()">Sign Up</button><br />
+  <a href="login.html">Already have an account? Log in</a>
+</body>
+</html>
