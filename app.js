@@ -58,11 +58,6 @@ function getAuthInputs() {
 
 // Helper to manage visibility of auth controls
 function updateAuthUI(user) {
-  const authStatusDiv = document.getElementById("authStatus");
-  const loggedInControlsDiv = document.getElementById("auth-logged-in"); // Assuming a div for logged in controls
-  const loggedOutControlsDiv = document.getElementById("auth-logged-out"); // Assuming a div for logged out controls
-  const historySectionDiv = document.getElementById("historySection");
-
   if (authStatusDiv) {
     if (user) {
       authStatusDiv.innerText = `🔓 Logged in as ${user.email} ${user.emailVerified ? '(Verified)' : '(Unverified)'}`;
@@ -77,6 +72,7 @@ function updateAuthUI(user) {
     }
   }
 }
+
 
 Authentication state listener
 auth.onAuthStateChanged(user => {
