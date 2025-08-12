@@ -2,218 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>User Dashboard</title>
-  <link rel="stylesheet" href="styles.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background-color: #f8f9fa;
-    }
-
-    header {
-      background-color: #1e3d59;
-      color: white;
-      padding: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    header h1 {
-      font-size: 1.4rem;
-      margin: 0;
-    }
-    nav a {
-      color: white;
-      text-decoration: none;
-      margin-left: 15px;
-      font-weight: bold;
-    }
-    nav a:hover {
-      text-decoration: underline;
-    }
-
-    .container {
-      padding: 20px;
-    }
-
-    /* Stats Cards */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-    .stat-card {
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    .stat-card h3 {
-      margin: 0;
-      font-size: 1rem;
-      color: #555;
-    }
-    .stat-card p {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-top: 5px;
-      color: #1e3d59;
-    }
-
-    /* Table */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-    th {
-      background-color: #1e3d59;
-      color: white;
-    }
-    tr:hover {
-      background-color: #f1f1f1;
-    }
-
-    @media (max-width: 600px) {
-      th, td {
-        font-size: 0.85rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  
+  <!-- Top Navigation -->
+  <header class="dashboard-header">
+    <div class="logo">🐎 Horse Odds Calculator</div>
+    <nav>
+      <a href="index.html">Back to App</a>
+      <a href="#" id="logoutBtn">Logout</a>
+    </nav>
+  </header>
 
-<header>
-  <h1>Horse Odds Calculator - Dashboard</h1>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="#" id="logoutBtn">Logout</a>
-  </nav>
-</header>
-
-<div class="container">
-
-  <!-- Stats Cards -->
-  <div class="stats-grid">
+  <!-- Stats Overview -->
+  <section class="stats-grid">
     <div class="stat-card">
       <h3>Total Bets</h3>
       <p id="totalBets">0</p>
     </div>
     <div class="stat-card">
       <h3>Total Winnings</h3>
-      <p id="totalWinnings">$0</p>
+      <p id="totalWinnings">$0.00</p>
     </div>
     <div class="stat-card">
-      <h3>Average Bet</h3>
-      <p id="averageBet">$0</p>
+      <h3>Win Rate</h3>
+      <p id="winRate">0%</p>
     </div>
-  </div>
+    <div class="stat-card">
+      <h3>Average Bet Amount</h3>
+      <p id="avgBet">$0.00</p>
+    </div>
+  </section>
 
   <!-- Bet History Table -->
-  <h2>Bet History</h2>
-  <table id="betHistoryTable">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Bet Type</th>
-        <th>Amount</th>
-        <th>Odds</th>
-        <th>Result</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Populated by JS -->
-    </tbody>
-  </table>
+  <section class="table-section">
+    <h2>Your Bet History</h2>
+    <table id="betHistoryTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Bet Type</th>
+          <th>Amount</th>
+          <th>Odds</th>
+          <th>Result</th>
+          <th>Winnings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="6">Loading bet history...</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
 
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
-<script src="firebaseConfig.js"></script>
-<script>
-  // Firebase init
-  const app = firebase.initializeApp(firebaseConfig);
-  const auth = firebase.getAuth();
-  const db = firebase.getFirestore();
-
-  // Auth check
-  firebase.onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      window.location.href = "login.html";
-    } else {
-      loadUserStats(user.uid);
-      loadBetHistory(user.uid);
-    }
-  });
-
-  // Load Stats
-  async function loadUserStats(uid) {
-    const q = firebase.query(
-      firebase.collection(db, "bets"),
-      firebase.where("userId", "==", uid)
-    );
-    const snapshot = await firebase.getDocs(q);
-    let totalBets = snapshot.size;
-    let totalWinnings = 0;
-    let totalAmount = 0;
-
-    snapshot.forEach(doc => {
-      const bet = doc.data();
-      totalAmount += bet.amount || 0;
-      if (bet.result === "win") {
-        totalWinnings += bet.payout || 0;
-      }
-    });
-
-    document.getElementById("totalBets").textContent = totalBets;
-    document.getElementById("totalWinnings").textContent = `$${totalWinnings.toFixed(2)}`;
-    document.getElementById("averageBet").textContent = totalBets ? `$${(totalAmount / totalBets).toFixed(2)}` : "$0";
-  }
-
-  // Load Bet History
-  async function loadBetHistory(uid) {
-    const q = firebase.query(
-      firebase.collection(db, "bets"),
-      firebase.where("userId", "==", uid),
-      firebase.orderBy("date", "desc")
-    );
-    const snapshot = await firebase.getDocs(q);
-    const tbody = document.querySelector("#betHistoryTable tbody");
-    tbody.innerHTML = "";
-
-    snapshot.forEach(doc => {
-      const bet = doc.data();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${bet.date || ""}</td>
-        <td>${bet.type || ""}</td>
-        <td>$${bet.amount?.toFixed(2) || "0.00"}</td>
-        <td>${bet.odds || ""}</td>
-        <td>${bet.result || ""}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // Logout
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    firebase.signOut(auth);
-  });
-</script>
-
+  <script src="js/dashboard.js"></script>
 </body>
 </html>
