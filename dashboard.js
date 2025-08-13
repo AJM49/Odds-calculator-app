@@ -1,54 +1,81 @@
-// Check if user is logged in
-firebase.auth().onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = "login.html";
-  } else {
-    loadDashboardData(user.uid);
-  }
-});
+// ===============================
+// dashboard.js - User Dashboard
+// ===============================
 
-function loadDashboardData(userId) {
-  // Example Firestore fetch (adjust to your structure)
-  const betsRef = firebase.firestore().collection("bets").where("userId", "==", userId);
+// -------------------------------
+// Firebase Initialization
+// (Make sure your firebaseConfig is already defined in firebase-config.js)
+// -------------------------------
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-  betsRef.get().then(snapshot => {
-    let totalBets = snapshot.size;
+// -------------------------------
+// Load and display user dashboard stats
+// -------------------------------
+function loadUserDashboard(userId) {
+    const betHistoryBody = document.getElementById("betHistoryBody");
+    const statTotalBets = document.getElementById("statTotalBets");
+    const statTotalWinnings = document.getElementById("statTotalWinnings");
+    const statWinRate = document.getElementById("statWinRate");
+
+    // Reset dashboard display
+    betHistoryBody.innerHTML = "";
+    statTotalBets.textContent = "0";
+    statTotalWinnings.textContent = "$0.00";
+    statWinRate.textContent = "0%";
+
+    let totalBets = 0;
     let totalWinnings = 0;
-    let winCount = 0;
-    let totalBetAmount = 0;
+    let wins = 0;
 
-    const tableBody = document.querySelector("#betHistoryTable tbody");
-    tableBody.innerHTML = "";
+    db.collection("bets")
+        .where("userId", "==", userId)
+        .orderBy("date", "desc")
+        .get()
+        .then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                const bet = doc.data();
+                totalBets++;
+                totalWinnings += bet.winnings || 0;
 
-    snapshot.forEach(doc => {
-      const bet = doc.data();
-      totalBetAmount += bet.amount;
-      if (bet.result === "win") {
-        winCount++;
-        totalWinnings += bet.winnings || 0;
-      }
+                if (bet.result && bet.result.toLowerCase() === "win") {
+                    wins++;
+                }
 
-      tableBody.innerHTML += `
-        <tr>
-          <td>${new Date(bet.date).toLocaleDateString()}</td>
-          <td>${bet.betType}</td>
-          <td>$${bet.amount.toFixed(2)}</td>
-          <td>${bet.odds}</td>
-          <td>${bet.result}</td>
-          <td>$${(bet.winnings || 0).toFixed(2)}</td>
-        </tr>
-      `;
-    });
+                // Create bet history table row
+                const row = `
+                    <tr>
+                        <td>${bet.date || "N/A"}</td>
+                        <td>${bet.betType || "N/A"}</td>
+                        <td>$${bet.amount ? bet.amount.toFixed(2) : "0.00"}</td>
+                        <td>${bet.result || "N/A"}</td>
+                        <td>$${bet.winnings ? bet.winnings.toFixed(2) : "0.00"}</td>
+                    </tr>
+                `;
+                betHistoryBody.insertAdjacentHTML("beforeend", row);
+            });
 
-    document.getElementById("totalBets").innerText = totalBets;
-    document.getElementById("totalWinnings").innerText = `$${totalWinnings.toFixed(2)}`;
-    document.getElementById("winRate").innerText = totalBets > 0 ? `${((winCount / totalBets) * 100).toFixed(1)}%` : "0%";
-    document.getElementById("avgBet").innerText = totalBets > 0 ? `$${(totalBetAmount / totalBets).toFixed(2)}` : "$0.00";
-  });
+            // Update stat cards
+            statTotalBets.textContent = totalBets;
+            statTotalWinnings.textContent = `$${totalWinnings.toFixed(2)}`;
+            statWinRate.textContent =
+                totalBets > 0 ? `${((wins / totalBets) * 100).toFixed(1)}%` : "0%";
+        })
+        .catch((error) => {
+            console.error("Error loading dashboard:", error);
+        });
 }
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
-  });
+// -------------------------------
+// Auth State Listener
+// -------------------------------
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        console.log(`User logged in: ${user.email}`);
+        loadUserDashboard(user.uid);
+    } else {
+        console.log("User is not logged in, redirecting...");
+        window.location.href = "login.html"; // Redirect if not logged in
+    }
 });
