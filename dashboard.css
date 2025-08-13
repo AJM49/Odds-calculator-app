@@ -1,88 +1,72 @@
+/* General page background */
 body {
-  font-family: 'Roboto', sans-serif;
-  margin: 0;
-  background-color: #f5f7fa;
+  background-color: #f8f9fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #1a1a2e;
-  color: white;
-  padding: 1rem 2rem;
+/* Dashboard title */
+h1 {
+  font-weight: bold;
+  color: #333;
 }
 
-.dashboard-header .logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.dashboard-header nav a {
-  color: white;
-  margin-left: 1.5rem;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.dashboard-header nav a:hover {
-  text-decoration: underline;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  padding: 2rem;
-}
-
-.stat-card {
-  background: white;
+/* Stat cards styling */
+.card {
+  border: none;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  padding: 1rem;
-  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.stat-card h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #444;
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
-.stat-card p {
-  font-size: 1.5rem;
-  margin: 0.5rem 0 0;
-  font-weight: 700;
-  color: #2a9d8f;
+.card-title {
+  font-size: 1rem;
+  color: #666;
 }
 
-.table-section {
-  padding: 2rem;
+.card h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 10px;
+  color: #007bff;
 }
 
-.table-section h2 {
-  margin-bottom: 1rem;
+/* Bet history card */
+.card-header {
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+/* Table styling */
+.table {
+  margin-bottom: 0;
 }
 
-thead {
-  background: #264653;
-  color: white;
+.table thead th {
+  background-color: #212529;
+  color: #fff;
+  border-bottom: none;
 }
 
-th, td {
-  padding: 0.75rem;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
+.table tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
 }
 
-tbody tr:hover {
-  background: #f0f0f0;
+.table td, .table th {
+  vertical-align: middle;
 }
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .card h2 {
+    font-size: 1.5rem;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+}
+
