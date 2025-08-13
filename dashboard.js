@@ -16,76 +16,140 @@ const firebaseConfig = {
   appId: "1:258212871291:web:efcbb1d5715a9c9cd476de",
 };
 
-firebase.initializeApp(firebaseConfig);
+// Firestore reference
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// -------------------------------
-// Load and display user dashboard stats
-// -------------------------------
-function loadUserDashboard(userId) {
-    const betHistoryBody = document.getElementById("betHistoryBody");
-    const statTotalBets = document.getElementById("statTotalBets");
-    const statTotalWinnings = document.getElementById("statTotalWinnings");
-    const statWinRate = document.getElementById("statWinRate");
+// DOM elements
+const totalBetsEl = document.getElementById("totalBets");
+const totalWinningsEl = document.getElementById("totalWinnings");
+const activeUsersEl = document.getElementById("activeUsers");
+const betHistoryTable = document.getElementById("betHistoryTable")?.querySelector("tbody");
 
-    // Reset dashboard display
-    betHistoryBody.innerHTML = "";
-    statTotalBets.textContent = "0";
-    statTotalWinnings.textContent = "$0.00";
-    statWinRate.textContent = "0%";
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    console.warn("No user signed in, redirecting to login...");
+    window.location.href = "login.html";
+    return;
+  }
+
+  console.log("User signed in:", user.email, "UID:", user.uid);
+
+  // Get user role
+  const userDoc = await db.collection("users").doc(user.uid).get();
+  const role = userDoc.exists ? userDoc.data().role : "user";
+  console.log("User role:", role);
+
+  if (role === "admin") {
+    loadAdminStats();
+  } else {
+    loadUserStats(user.uid);
+  }
+});
+
+/**
+ * Admin view: Show all bets & user stats
+ */
+async function loadAdminStats() {
+  console.log("Loading admin dashboard...");
+
+  try {
+    const betsSnapshot = await db.collection("bets").get();
+    console.log("Bets found:", betsSnapshot.size);
 
     let totalBets = 0;
     let totalWinnings = 0;
-    let wins = 0;
+    let usersSet = new Set();
 
-    db.collection("bets")
-        .where("userId", "==", userId)
-        .orderBy("date", "desc")
-        .get()
-        .then((querySnapshot) => {
-            querySnapshot.forEach((doc) => {
-                const bet = doc.data();
-                totalBets++;
-                totalWinnings += bet.winnings || 0;
+    betsSnapshot.forEach(doc => {
+      const bet = doc.data();
+      console.log("Bet document:", doc.id, bet);
 
-                if (bet.result && bet.result.toLowerCase() === "win") {
-                    wins++;
-                }
+      totalBets++;
+      totalWinnings += bet.winnings || 0;
+      if (bet.userEmail) usersSet.add(bet.userEmail);
 
-                // Create bet history table row
-                const row = `
-                    <tr>
-                        <td>${bet.date || "N/A"}</td>
-                        <td>${bet.betType || "N/A"}</td>
-                        <td>$${bet.amount ? bet.amount.toFixed(2) : "0.00"}</td>
-                        <td>${bet.result || "N/A"}</td>
-                        <td>$${bet.winnings ? bet.winnings.toFixed(2) : "0.00"}</td>
-                    </tr>
-                `;
-                betHistoryBody.insertAdjacentHTML("beforeend", row);
-            });
+      addBetRow(bet);
+    });
 
-            // Update stat cards
-            statTotalBets.textContent = totalBets;
-            statTotalWinnings.textContent = `$${totalWinnings.toFixed(2)}`;
-            statWinRate.textContent =
-                totalBets > 0 ? `${((wins / totalBets) * 100).toFixed(1)}%` : "0%";
-        })
-        .catch((error) => {
-            console.error("Error loading dashboard:", error);
-        });
+    updateDashboardUI(totalBets, totalWinnings, usersSet.size);
+
+  } catch (error) {
+    console.error("Error loading admin stats:", error);
+  }
 }
 
-// -------------------------------
-// Auth State Listener
-// -------------------------------
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        console.log(`User logged in: ${user.email}`);
-        loadUserDashboard(user.uid);
-    } else {
-        console.log("User is not logged in, redirecting...");
-        window.location.href = "login.html"; // Redirect if not logged in
-    }
-});
+/**
+ * User view: Show only their bets
+ */
+async function loadUserStats(uid) {
+  console.log("Loading user dashboard for UID:", uid);
+
+  try {
+    const betsSnapshot = await db.collection("bets")
+      .where("userId", "==", uid)
+      .get();
+
+    console.log("User bets found:", betsSnapshot.size);
+
+    let totalBets = 0;
+    let totalWinnings = 0;
+
+    betsSnapshot.forEach(doc => {
+      const bet = doc.data();
+      console.log("User bet:", doc.id, bet);
+
+      totalBets++;
+      totalWinnings += bet.winnings || 0;
+      addBetRow(bet);
+    });
+
+    updateDashboardUI(totalBets, totalWinnings);
+
+  } catch (error) {
+    console.error("Error loading user stats:", error);
+  }
+}
+
+/**
+ * Add a bet row to the table
+ */
+function addBetRow(bet) {
+  if (!betHistoryTable) return;
+
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td>${bet.date || "-"}</td>
+    <td>${bet.type || "-"}</td>
+    <td>$${(bet.amount || 0).toFixed(2)}</td>
+    <td>$${(bet.winnings || 0).toFixed(2)}</td>
+    <td>${bet.userEmail || "-"}</td>
+  `;
+
+  betHistoryTable.appendChild(row);
+}
+
+/**
+ * Update dashboard cards
+ */
+function updateDashboardUI(totalBets, totalWinnings, activeUsers = null) {
+  if (totalBetsEl) totalBetsEl.innerText = totalBets;
+  if (totalWinningsEl) totalWinningsEl.innerText = `$${totalWinnings.toFixed(2)}`;
+  if (activeUsersEl && activeUsers !== null) activeUsersEl.innerText = activeUsers;
+}
+
+/**
+ * Update winnings (manual or API-driven)
+ */
+async function updateWinnings(betId, payoutAmount) {
+  try {
+    await db.collection("bets").doc(betId).update({
+      winnings: payoutAmount
+    });
+    console.log(`Updated winnings for bet ${betId} to $${payoutAmount.toFixed(2)}`);
+  } catch (error) {
+    console.error("Error updating winnings:", error);
+  }
+}
+
