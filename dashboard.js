@@ -6,6 +6,16 @@
 // Firebase Initialization
 // (Make sure your firebaseConfig is already defined in firebase-config.js)
 // -------------------------------
+// ===== FIREBASE INIT =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
+  authDomain: "horse-bet-calculator.firebaseapp.com",
+  projectId: "horse-bet-calculator",
+  storageBucket: "horse-bet-calculator.firebasestorage.app",
+  messagingSenderId: "258212871291",
+  appId: "1:258212871291:web:efcbb1d5715a9c9cd476de",
+};
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
