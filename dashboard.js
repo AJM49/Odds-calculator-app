@@ -1,155 +1,69 @@
-// ===============================
-// dashboard.js - User Dashboard
-// ===============================
-
-// -------------------------------
-// Firebase Initialization
-// (Make sure your firebaseConfig is already defined in firebase-config.js)
-// -------------------------------
-// ===== FIREBASE INIT =====
-const firebaseConfig = {
-  apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
-  authDomain: "horse-bet-calculator.firebaseapp.com",
-  projectId: "horse-bet-calculator",
-  storageBucket: "horse-bet-calculator.firebasestorage.app",
-  messagingSenderId: "258212871291",
-  appId: "1:258212871291:web:efcbb1d5715a9c9cd476de",
-};
-
-// Firestore reference
+// dashboard.js
+// ========================
+// Firebase initialization (make sure firebase-config.js is loaded before this)
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// DOM elements
+// DOM elements for stats
 const totalBetsEl = document.getElementById("totalBets");
 const totalWinningsEl = document.getElementById("totalWinnings");
-const activeUsersEl = document.getElementById("activeUsers");
-const betHistoryTable = document.getElementById("betHistoryTable")?.querySelector("tbody");
+const winRateEl = document.getElementById("winRate");
+const betHistoryTable = document.getElementById("betHistoryTable");
 
+// Listen for authentication state
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
-    console.warn("No user signed in, redirecting to login...");
-    window.location.href = "login.html";
+    window.location.href = "login.html"; // Redirect if not logged in
     return;
   }
-
-  console.log("User signed in:", user.email, "UID:", user.uid);
-
-  // Get user role
-  const userDoc = await db.collection("users").doc(user.uid).get();
-  const role = userDoc.exists ? userDoc.data().role : "user";
-  console.log("User role:", role);
-
-  if (role === "admin") {
-    loadAdminStats();
-  } else {
-    loadUserStats(user.uid);
-  }
+  console.log(`Logged in as: ${user.email}`);
+  loadDashboard(user.uid);
 });
 
-/**
- * Admin view: Show all bets & user stats
- */
-async function loadAdminStats() {
-  console.log("Loading admin dashboard...");
-
+// Load dashboard data
+async function loadDashboard(userId) {
   try {
-    const betsSnapshot = await db.collection("bets").get();
-    console.log("Bets found:", betsSnapshot.size);
-
-    let totalBets = 0;
-    let totalWinnings = 0;
-    let usersSet = new Set();
-
-    betsSnapshot.forEach(doc => {
-      const bet = doc.data();
-      console.log("Bet document:", doc.id, bet);
-
-      totalBets++;
-      totalWinnings += bet.winnings || 0;
-      if (bet.userEmail) usersSet.add(bet.userEmail);
-
-      addBetRow(bet);
-    });
-
-    updateDashboardUI(totalBets, totalWinnings, usersSet.size);
-
-  } catch (error) {
-    console.error("Error loading admin stats:", error);
-  }
-}
-
-/**
- * User view: Show only their bets
- */
-async function loadUserStats(uid) {
-  console.log("Loading user dashboard for UID:", uid);
-
-  try {
-    const betsSnapshot = await db.collection("bets")
-      .where("userId", "==", uid)
+    const betsSnapshot = await db
+      .collection("bets")
+      .where("userId", "==", userId)
+      .orderBy("date", "desc")
       .get();
 
-    console.log("User bets found:", betsSnapshot.size);
-
     let totalBets = 0;
     let totalWinnings = 0;
+    let wins = 0;
+    let rowsHTML = "";
 
-    betsSnapshot.forEach(doc => {
+    betsSnapshot.forEach((doc) => {
       const bet = doc.data();
-      console.log("User bet:", doc.id, bet);
-
       totalBets++;
-      totalWinnings += bet.winnings || 0;
-      addBetRow(bet);
+
+      // Calculate winnings (simplified logic)
+      let winnings = 0;
+      if (bet.result && bet.result.toLowerCase() === "win") {
+        winnings = bet.amount * bet.odds;
+        totalWinnings += winnings;
+        wins++;
+      }
+
+      rowsHTML += `
+        <tr>
+          <td>${bet.horseName}</td>
+          <td>${bet.amount}</td>
+          <td>${bet.odds}</td>
+          <td>${bet.result || "Pending"}</td>
+          <td>${winnings.toFixed(2)}</td>
+        </tr>
+      `;
     });
 
-    updateDashboardUI(totalBets, totalWinnings);
+    // Update UI
+    totalBetsEl.textContent = totalBets;
+    totalWinningsEl.textContent = `$${totalWinnings.toFixed(2)}`;
+    winRateEl.textContent = totalBets > 0 ? ((wins / totalBets) * 100).toFixed(1) + "%" : "0%";
+    betHistoryTable.innerHTML = rowsHTML;
 
   } catch (error) {
-    console.error("Error loading user stats:", error);
+    console.error("Error loading dashboard:", error);
   }
 }
-
-/**
- * Add a bet row to the table
- */
-function addBetRow(bet) {
-  if (!betHistoryTable) return;
-
-  const row = document.createElement("tr");
-
-  row.innerHTML = `
-    <td>${bet.date || "-"}</td>
-    <td>${bet.type || "-"}</td>
-    <td>$${(bet.amount || 0).toFixed(2)}</td>
-    <td>$${(bet.winnings || 0).toFixed(2)}</td>
-    <td>${bet.userEmail || "-"}</td>
-  `;
-
-  betHistoryTable.appendChild(row);
-}
-
-/**
- * Update dashboard cards
- */
-function updateDashboardUI(totalBets, totalWinnings, activeUsers = null) {
-  if (totalBetsEl) totalBetsEl.innerText = totalBets;
-  if (totalWinningsEl) totalWinningsEl.innerText = `$${totalWinnings.toFixed(2)}`;
-  if (activeUsersEl && activeUsers !== null) activeUsersEl.innerText = activeUsers;
-}
-
-/**
- * Update winnings (manual or API-driven)
- */
-async function updateWinnings(betId, payoutAmount) {
-  try {
-    await db.collection("bets").doc(betId).update({
-      winnings: payoutAmount
-    });
-    console.log(`Updated winnings for bet ${betId} to $${payoutAmount.toFixed(2)}`);
-  } catch (error) {
-    console.error("Error updating winnings:", error);
-  }
-}
-
