@@ -45,8 +45,6 @@ auth.onAuthStateChanged(async (user) => {
   <td>${bet.result || "pending"}</td>
   <td>$${bet.winnings ? Number(bet.winnings).toFixed(2) : "0.00"}</td>
 </tr>
-
-          `;
         });
       }
 
