@@ -37,14 +37,15 @@ auth.onAuthStateChanged(async (user) => {
           }
 
           betsHTML += `
-            <tr>
-              <td>${date}</td>
-              <td>${horse}</td>
-              <td>${betType}</td>
-              <td>${amount}</td>
-              <td class="${status.toLowerCase()}">${status}</td>
-              <td>${winnings}</td>
-            </tr>
+            <tr class="result-${bet.result || 'pending'}">
+  <td>${bet.horseName || "—"}</td>
+  <td>${bet.trackName || "—"}</td>
+  <td>${bet.betType || "—"}</td>
+  <td>$${bet.amount?.toFixed(2) || "0.00"}</td>
+  <td>${bet.result || "pending"}</td>
+  <td>$${bet.winnings ? Number(bet.winnings).toFixed(2) : "0.00"}</td>
+</tr>
+
           `;
         });
       }
