@@ -30,26 +30,19 @@
   </div>
 
   <!-- Bet History Table -->
-  <div class="table-container">
-    <h2>Bet History</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Horse</th>
-          <th>Bet Type</th>
-          <th>Amount</th>
-          <th>Status</th>
-          <th>Winnings</th>
-        </tr>
-      </thead>
-      <tbody id="betHistoryTable">
-        <tr>
-          <td colspan="6" style="text-align: center;">Loading bets...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <table>
+  <thead>
+    <tr>
+      <th>Horse Name</th>
+      <th>Track Name</th>
+      <th>Bet Type</th>
+      <th>Amount</th>
+      <th>Result</th>
+      <th>Winnings</th>
+    </tr>
+  </thead>
+  <tbody id="betsTableBody"></tbody>
+  </table>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"></script>
