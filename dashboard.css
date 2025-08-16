@@ -1,119 +1,39 @@
-/* dashboard.css */
-
-/* Reset & Base Styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: "Segoe UI", Tahoma, sans-serif;
-  background-color: #f5f6fa;
-  color: #333;
-  line-height: 1.6;
-  padding: 20px;
-}
-
-/* Header */
-.dashboard-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.dashboard-header h1 {
-  font-size: 2rem;
-  color: #222;
-}
-
-/* Summary Cards Container */
-.stats-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-bottom: 30px;
-  justify-content: center;
-}
-
-.stat-card {
-  background: white;
-  border-radius: 10px;
-  padding: 20px 30px;
-  min-width: 200px;
-  text-align: center;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-}
-
-.stat-card h2 {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #555;
-  margin-bottom: 10px;
-}
-
-.stat-card p {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #27ae60;
-}
-
-/* Win Rate Special Color */
-#winRate {
-  color: #2980b9;
-}
-
-/* Bet History Table */
-.table-container {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
-  overflow-x: auto;
-}
-
+/* Table styling */
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px;
+  font-family: Arial, sans-serif;
+  margin-top: 20px;
 }
 
-thead {
-  background-color: #34495e;
-  color: white;
-}
-
-thead th {
-  padding: 12px 15px;
-  font-weight: 500;
-}
-
-tbody td {
-  padding: 12px 15px;
+th, td {
+  padding: 10px;
+  text-align: left;
   border-bottom: 1px solid #ddd;
 }
 
-tbody tr:hover {
-  background-color: #f8f9fa;
+th {
+  background-color: #f4f4f4;
+  font-weight: bold;
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .stats-container {
-    flex-direction: column;
-    align-items: center;
-  }
+/* Row hover effect */
+tr:hover {
+  background-color: #f9f9f9;
+}
 
-  .stat-card {
-    width: 100%;
-    max-width: 300px;
-  }
+/* Result color coding */
+.result-win {
+  color: #0f9d58; /* green */
+  font-weight: bold;
+}
 
-  table {
-    font-size: 0.9rem;
-  }
+.result-loss {
+  color: #d93025; /* red */
+  font-weight: bold;
+}
+
+.result-pending {
+  color: #fbbc05; /* yellow */
+  font-weight: bold;
 }
