@@ -7,42 +7,66 @@
   <link rel="stylesheet" href="dashboard.css" />
 </head>
 <body>
-
-  <!-- Dashboard Header -->
-  <div class="dashboard-header">
-    <h1>My Betting Dashboard</h1>
-  </div>
-
-  <!-- Summary Stats -->
-  <div class="stats-container">
-    <div class="stat-card">
-      <h2>Total Bets</h2>
-      <p id="totalBets">0</p>
+  <main class="dashboard-shell">
+    <div class="dashboard-topbar">
+      <a class="topbar-link" href="index.html">← Back to Calculator</a>
+      <button id="refreshBtn" type="button">Refresh</button>
     </div>
-    <div class="stat-card">
-      <h2>Total Winnings</h2>
-      <p id="totalWinnings">$0.00</p>
-    </div>
-    <div class="stat-card">
-      <h2>Win Rate</h2>
-      <p id="winRate">0%</p>
-    </div>
-  </div>
 
-  <!-- Bet History Table -->
-  <table>
-  <thead>
-    <tr>
-      <th>Horse Name</th>
-      <th>Track Name</th>
-      <th>Bet Type</th>
-      <th>Amount</th>
-      <th>Result</th>
-      <th>Winnings</th>
-    </tr>
-  </thead>
-  <tbody id="betsTableBody"></tbody>
-  </table>
+    <header class="dashboard-header">
+      <h1>My Betting Dashboard</h1>
+      <p id="dashboardSubtitle">Live history and performance snapshots.</p>
+    </header>
+
+    <div id="statusLine" class="status-line">Loading bets...</div>
+
+    <!-- Summary Stats -->
+    <section class="stats-container">
+      <div class="stat-card">
+        <h2>Total Bets</h2>
+        <p id="totalBets">0</p>
+      </div>
+      <div class="stat-card">
+        <h2>Total Winnings</h2>
+        <p id="totalWinnings">$0.00</p>
+      </div>
+      <div class="stat-card">
+        <h2>Win Rate</h2>
+        <p id="winRate">0%</p>
+      </div>
+      <div class="stat-card">
+        <h2>Average Bet</h2>
+        <p id="avgBet">$0.00</p>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="table-head">
+        <h2>Recent Bets</h2>
+      </div>
+
+      <div id="emptyState" class="empty-state" style="display:none;">
+        No bets yet. Create one in the calculator to see it here.
+      </div>
+
+      <!-- Bet History Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Horse Name</th>
+              <th>Track Name</th>
+              <th>Bet Type</th>
+              <th>Amount</th>
+              <th>Result</th>
+              <th>Winnings</th>
+            </tr>
+          </thead>
+          <tbody id="betsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
