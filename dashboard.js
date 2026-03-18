@@ -32,19 +32,34 @@ function loadBets(userId) {
     unsubscribeBets();
   }
 
-  unsubscribeBets = db.collection("bets")
+  const handleSnapshot = (snapshot) => {
+    const bets = [];
+    snapshot.forEach((doc) => bets.push(doc.data()));
+    renderBetsTable(bets);
+    renderSummary(bets);
+    document.getElementById("statusLine").textContent = `Updated ${new Date().toLocaleTimeString()} • ${bets.length} bet(s) loaded`;
+  };
+
+  // Prefer ordered stream; if index/order query fails, degrade gracefully to unordered stream.
+  const orderedQuery = db.collection("bets")
     .where("userId", "==", userId)
-    .orderBy("timestamp", "desc")
-    .onSnapshot((snapshot) => {
-      const bets = [];
-      snapshot.forEach((doc) => bets.push(doc.data()));
-      renderBetsTable(bets);
-      renderSummary(bets);
-      document.getElementById("statusLine").textContent = `Updated ${new Date().toLocaleTimeString()} • ${bets.length} bet(s) loaded`;
-    }, (error) => {
-      console.error(error);
-      document.getElementById("statusLine").textContent = "Unable to load bets right now.";
-    });
+    .orderBy("timestamp", "desc");
+
+  unsubscribeBets = orderedQuery.onSnapshot(handleSnapshot, (error) => {
+    console.error(error);
+
+    // Fallback path for missing index / ordering failures.
+    if (typeof unsubscribeBets === "function") {
+      unsubscribeBets();
+    }
+
+    unsubscribeBets = db.collection("bets")
+      .where("userId", "==", userId)
+      .onSnapshot(handleSnapshot, (fallbackError) => {
+        console.error(fallbackError);
+        document.getElementById("statusLine").textContent = "Unable to load bets right now.";
+      });
+  });
 }
 
 function renderSummary(bets) {
