@@ -1,10 +1,12 @@
 const auth = firebase.auth();
 const db = firebase.firestore();
 let currentUserId = null;
+// Keep one active Firestore subscription to avoid duplicate listeners on refresh.
 let unsubscribeBets = null;
 
 auth.onAuthStateChanged((user) => {
   if (!user) {
+    // Preserve destination so login can return users to dashboard.
     window.location.href = "login.html?next=dashboard.html";
     return;
   }
@@ -26,6 +28,7 @@ auth.onAuthStateChanged((user) => {
 
 function loadBets(userId) {
   if (typeof unsubscribeBets === "function") {
+    // Dispose previous listener before creating a new live query.
     unsubscribeBets();
   }
 
@@ -45,6 +48,7 @@ function loadBets(userId) {
 }
 
 function renderSummary(bets) {
+  // Core totals and rate metrics displayed in analytics cards.
   const totalBets = bets.length;
   const totalWinnings = bets.reduce((sum, bet) => sum + Number(bet.winnings || 0), 0);
   const totalAmount = bets.reduce((sum, bet) => sum + Number(bet.betAmount || 0), 0);
@@ -70,6 +74,7 @@ function renderSummary(bets) {
   document.getElementById("bestOdds").textContent =
     bestOddsValue === null ? "—" : `${bestOddsValue.toFixed(2)}x`;
 
+  // Color-code profit/ROI to make gains/losses obvious at a glance.
   const netProfitEl = document.getElementById("netProfit");
   const roiEl = document.getElementById("roi");
   netProfitEl.classList.remove("metric-positive", "metric-negative");
@@ -82,6 +87,7 @@ function renderSummary(bets) {
 }
 
 function parseOddsToDecimal(odds) {
+  // Normalize multiple odds formats so "Best Odds" is comparable.
   if (!odds) return null;
   const normalized = String(odds).replaceAll(",", "").trim().toUpperCase();
   if (!normalized) return null;

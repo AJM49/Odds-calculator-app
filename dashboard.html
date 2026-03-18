@@ -7,7 +7,9 @@
   <link rel="stylesheet" href="dashboard.css" />
 </head>
 <body>
+  <!-- Dashboard shell wraps the upgraded UI (topbar, analytics cards, and history table). -->
   <main class="dashboard-shell">
+    <!-- Quick actions: return to calculator and manually refresh live data. -->
     <div class="dashboard-topbar">
       <a class="topbar-link" href="index.html">← Back to Calculator</a>
       <button id="refreshBtn" type="button">Refresh</button>
@@ -20,7 +22,7 @@
 
     <div id="statusLine" class="status-line">Loading bets...</div>
 
-    <!-- Summary Stats -->
+    <!-- Summary + analytics metrics rendered by dashboard.js -->
     <section class="stats-container">
       <div class="stat-card">
         <h2>Total Bets</h2>
@@ -56,6 +58,7 @@
       </div>
     </section>
 
+    <!-- Recent bets table with empty state when user has no history -->
     <section class="table-card">
       <div class="table-head">
         <h2>Recent Bets</h2>

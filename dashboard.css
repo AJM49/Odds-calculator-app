@@ -6,11 +6,13 @@ body {
   color: #1f2937;
 }
 
+/* Main page frame for the upgraded dashboard layout. */
 .dashboard-shell {
   max-width: 1100px;
   margin: 0 auto;
 }
 
+/* Top action bar (navigation + manual refresh). */
 .dashboard-topbar {
   display: flex;
   justify-content: space-between;
@@ -58,6 +60,7 @@ body {
   color: #4b5563;
 }
 
+/* Responsive analytics card grid (summary + advanced metrics). */
 .stats-container {
   display: grid;
   grid-template-columns: repeat(4, minmax(150px, 1fr));
@@ -123,6 +126,7 @@ body {
   color: #475569;
 }
 
+/* History table container uses horizontal scroll on small screens. */
 .table-wrap {
   overflow-x: auto;
 }
@@ -173,12 +177,14 @@ tbody tr:hover {
 }
 
 @media (max-width: 900px) {
+  /* Two-column card layout on tablets/smaller laptops. */
   .stats-container {
     grid-template-columns: repeat(2, minmax(120px, 1fr));
   }
 }
 
 @media (max-width: 600px) {
+  /* Single-column cards and tighter spacing on phones. */
   body {
     padding: 10px;
   }
