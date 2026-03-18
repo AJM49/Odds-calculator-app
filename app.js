@@ -8,12 +8,12 @@
 ------------------------------------ */
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_DOMAIN.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
+  authDomain: "horse-bet-calculator.firebaseapp.com",
+  projectId: "horse-bet-calculator",
+  storageBucket: "horse-bet-calculator.firebasestorage.app",
+  messagingSenderId: "258212871291",
+  appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -28,6 +28,8 @@ const db = firebase.firestore();
 const calculateBtn = document.getElementById("calculateBtn");
 const submitBetBtn = document.getElementById("submitBetBtn");
 const shareBtn = document.getElementById("shareBtn");
+const fetchPayoutBtn = document.getElementById("fetchPayoutBtn");
+const loadHistoryBtn = document.getElementById("loadHistoryBtn");
 
 const trackInput = document.getElementById("trackName");
 const horseInput = document.getElementById("horseName");
@@ -44,6 +46,7 @@ const historySection = document.getElementById("historySection");
 
 const userInfo = document.getElementById("userInfo");
 const logoutBtn = document.getElementById("logoutBtn");
+const authStatus = document.getElementById("authStatus");
 
 let calculatedPayout = 0;
 
@@ -57,7 +60,12 @@ auth.onAuthStateChanged(user => {
     return;
   }
 
-  userInfo.innerText = "Logged in: " + user.email;
+  if (userInfo) {
+    userInfo.innerText = "Logged in: " + user.email;
+  }
+  if (authStatus) {
+    authStatus.innerText = "Logged in: " + user.email;
+  }
 
   loadBetHistory();
 
@@ -329,9 +337,9 @@ if (shareBtn) {
 
   shareBtn.addEventListener("click", () => {
 
-    const track = trackInput.value;
-    const horse = horseInput.value;
-    const odds = oddsInput.value;
+    const track = trackInput ? trackInput.value : "";
+    const horse = horseInput ? horseInput.value : "";
+    const odds = oddsInput ? oddsInput.value : "";
 
     const text =
       "My bet: " +
@@ -347,4 +355,16 @@ if (shareBtn) {
 
   });
 
+}
+
+if (fetchPayoutBtn) {
+  fetchPayoutBtn.addEventListener("click", () => {
+    resultDiv.innerText = "Mock live odds fetched. Entered odds kept as-is for local calculation.";
+  });
+}
+
+if (loadHistoryBtn) {
+  loadHistoryBtn.addEventListener("click", () => {
+    loadBetHistory();
+  });
 }

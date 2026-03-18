@@ -22,7 +22,24 @@
 
 <body>
   <h1>🐎 Horse Odds Calculator</h1>
+  <div id="userInfo" style="text-align:center;">Not logged in</div>
+  <button type="button" id="logoutBtn">Log Out</button>
   <form id="bettingForm">
+    <div class="form-group">
+      <label for="trackName">Track Name:</label>
+      <input type="text" id="trackName" placeholder="Track name" />
+    </div>
+
+    <div class="form-group">
+      <label for="horseName">Horse Name:</label>
+      <input type="text" id="horseName" placeholder="Horse name" />
+    </div>
+
+    <div class="form-group">
+      <label for="raceNumber">Race Number:</label>
+      <input type="number" id="raceNumber" placeholder="Race number" min="1" />
+    </div>
+
     <div class="form-group">
       <label for="betMode">Bet Mode:</label>
       <select id="betMode">
@@ -51,8 +68,16 @@
       <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" />
     </div>
 
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="isWinner" />
+        Mark as winner
+      </label>
+    </div>
+
     <div class="form-actions">
       <button type="button" id="calculateBtn">Calculate</button>
+      <button type="button" id="submitBetBtn">Save Bet</button>
       <button type="button" class="share-button" id="shareBtn">Share Bet</button>
       <button type="button" id="fetchPayoutBtn">Fetch Live Odds (Mock)</button>
     </div>

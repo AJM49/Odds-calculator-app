@@ -1,73 +1,53 @@
-// Firebase imports
-import { 
-  getFirestore, collection, query, where, orderBy, onSnapshot 
-} from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-// Initialize Firebase
-const db = getFirestore();
-const auth = getAuth();
-
-// Wait for user authentication before loading bets
-onAuthStateChanged(auth, user => {
-  if (user) {
-    loadBets(user.uid);
-  } else {
-    window.location.href = "login.html"; // redirect if not logged in
+auth.onAuthStateChanged((user) => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
   }
+
+  loadBets(user.uid);
 });
 
-/**
- * Loads and listens for changes to bets
- */
 function loadBets(userId) {
-  const betsRef = collection(db, "bets");
-  const q = query(
-    betsRef,
-    where("userId", "==", userId),
-    orderBy("timestamp", "desc")
-  );
-
-  // Live updates
-  onSnapshot(q, snapshot => {
-    let betsData = [];
-    snapshot.forEach(doc => {
-      const bet = doc.data();
-
-      // If winnings are missing but result is "win", calculate
-      if (bet.result === "win" && (bet.winnings === undefined || bet.winnings === null)) {
-        bet.winnings = (bet.amount * bet.odds).toFixed(2);
-      }
-
-      // If loss, set winnings to 0
-      if (bet.result === "loss") {
-        bet.winnings = 0;
-      }
-
-      betsData.push(bet);
+  db.collection("bets")
+    .where("userId", "==", userId)
+    .orderBy("timestamp", "desc")
+    .onSnapshot((snapshot) => {
+      const bets = [];
+      snapshot.forEach((doc) => bets.push(doc.data()));
+      renderBetsTable(bets);
+      renderSummary(bets);
     });
-
-    renderBetsTable(betsData);
-  });
 }
 
-/**
- * Renders bets into the dashboard table
- */
+function renderSummary(bets) {
+  const totalBets = bets.length;
+  const totalWinnings = bets.reduce((sum, bet) => sum + Number(bet.winnings || 0), 0);
+  const wins = bets.filter((bet) => bet.outcome === "win").length;
+  const winRate = totalBets ? (wins / totalBets) * 100 : 0;
+
+  document.getElementById("totalBets").textContent = String(totalBets);
+  document.getElementById("totalWinnings").textContent = `$${totalWinnings.toFixed(2)}`;
+  document.getElementById("winRate").textContent = `${winRate.toFixed(1)}%`;
+}
+
 function renderBetsTable(bets) {
   const tableBody = document.getElementById("betsTableBody");
   tableBody.innerHTML = "";
 
-  bets.forEach(bet => {
+  bets.forEach((bet) => {
     const tr = document.createElement("tr");
+    const outcome = bet.outcome || "pending";
 
     tr.innerHTML = `
       <td>${bet.horseName || "—"}</td>
       <td>${bet.trackName || "—"}</td>
       <td>${bet.betType || "—"}</td>
-      <td>$${bet.amount?.toFixed(2) || "0.00"}</td>
-      <td>${bet.result || "pending"}</td>
-      <td>$${bet.winnings ? Number(bet.winnings).toFixed(2) : "0.00"}</td>
+      <td>$${Number(bet.betAmount || 0).toFixed(2)}</td>
+      <td class="result-${outcome}">${outcome}</td>
+      <td>$${Number(bet.winnings || 0).toFixed(2)}</td>
     `;
 
     tableBody.appendChild(tr);
