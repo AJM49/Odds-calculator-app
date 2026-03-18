@@ -3,6 +3,23 @@ const db = firebase.firestore();
 let currentUserId = null;
 // Keep one active Firestore subscription to avoid duplicate listeners on refresh.
 let unsubscribeBets = null;
+let isRefreshBound = false;
+
+const ui = {
+  subtitle: document.getElementById("dashboardSubtitle"),
+  statusLine: document.getElementById("statusLine"),
+  refreshBtn: document.getElementById("refreshBtn"),
+  totalBets: document.getElementById("totalBets"),
+  totalWinnings: document.getElementById("totalWinnings"),
+  winRate: document.getElementById("winRate"),
+  avgBet: document.getElementById("avgBet"),
+  totalStaked: document.getElementById("totalStaked"),
+  netProfit: document.getElementById("netProfit"),
+  roi: document.getElementById("roi"),
+  bestOdds: document.getElementById("bestOdds"),
+  tableBody: document.getElementById("betsTableBody"),
+  emptyState: document.getElementById("emptyState"),
+};
 
 auth.onAuthStateChanged((user) => {
   if (!user) {
@@ -12,19 +29,47 @@ auth.onAuthStateChanged((user) => {
   }
 
   currentUserId = user.uid;
-  document.getElementById("dashboardSubtitle").textContent = `Live history and performance for ${user.email}.`;
-
-  const refreshBtn = document.getElementById("refreshBtn");
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", () => {
-      if (!currentUserId) return;
-      document.getElementById("statusLine").textContent = "Refreshing...";
-      loadBets(currentUserId);
-    });
-  }
+  ui.subtitle.textContent = `Live history and performance for ${user.email}.`;
+  bindRefreshButton();
 
   loadBets(user.uid);
 });
+
+function bindRefreshButton() {
+  if (!ui.refreshBtn || isRefreshBound) return;
+
+  ui.refreshBtn.addEventListener("click", () => {
+    if (!currentUserId) return;
+    ui.statusLine.textContent = "Refreshing...";
+    loadBets(currentUserId);
+  });
+
+  isRefreshBound = true;
+}
+
+function getBetSortTime(bet) {
+  if (typeof bet?.createdAtMs === "number" && Number.isFinite(bet.createdAtMs)) {
+    return bet.createdAtMs;
+  }
+  if (bet?.timestamp && typeof bet.timestamp.toDate === "function") {
+    return bet.timestamp.toDate().getTime();
+  }
+  return 0;
+}
+
+function sortBetsNewestFirst(bets) {
+  return [...bets].sort((a, b) => getBetSortTime(b) - getBetSortTime(a));
+}
+
+function toCurrency(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function setMetricTone(element, value) {
+  element.classList.remove("metric-positive", "metric-negative");
+  if (value > 0) element.classList.add("metric-positive");
+  if (value < 0) element.classList.add("metric-negative");
+}
 
 function loadBets(userId) {
   if (typeof unsubscribeBets === "function") {
@@ -35,9 +80,10 @@ function loadBets(userId) {
   const handleSnapshot = (snapshot) => {
     const bets = [];
     snapshot.forEach((doc) => bets.push(doc.data()));
-    renderBetsTable(bets);
-    renderSummary(bets);
-    document.getElementById("statusLine").textContent = `Updated ${new Date().toLocaleTimeString()} • ${bets.length} bet(s) loaded`;
+    const sortedBets = sortBetsNewestFirst(bets);
+    renderBetsTable(sortedBets);
+    renderSummary(sortedBets);
+    ui.statusLine.textContent = `Updated ${new Date().toLocaleTimeString()} • ${sortedBets.length} bet(s) loaded`;
   };
 
   // Prefer ordered stream; if index/order query fails, degrade gracefully to unordered stream.
@@ -57,7 +103,7 @@ function loadBets(userId) {
       .where("userId", "==", userId)
       .onSnapshot(handleSnapshot, (fallbackError) => {
         console.error(fallbackError);
-        document.getElementById("statusLine").textContent = "Unable to load bets right now.";
+        ui.statusLine.textContent = "Unable to load bets right now.";
       });
   });
 }
@@ -79,26 +125,19 @@ function renderSummary(bets) {
     return best;
   }, null);
 
-  document.getElementById("totalBets").textContent = String(totalBets);
-  document.getElementById("totalWinnings").textContent = `$${totalWinnings.toFixed(2)}`;
-  document.getElementById("winRate").textContent = `${winRate.toFixed(1)}%`;
-  document.getElementById("avgBet").textContent = `$${avgBet.toFixed(2)}`;
-  document.getElementById("totalStaked").textContent = `$${totalAmount.toFixed(2)}`;
-  document.getElementById("netProfit").textContent = `$${netProfit.toFixed(2)}`;
-  document.getElementById("roi").textContent = `${roi.toFixed(1)}%`;
-  document.getElementById("bestOdds").textContent =
+  ui.totalBets.textContent = String(totalBets);
+  ui.totalWinnings.textContent = toCurrency(totalWinnings);
+  ui.winRate.textContent = `${winRate.toFixed(1)}%`;
+  ui.avgBet.textContent = toCurrency(avgBet);
+  ui.totalStaked.textContent = toCurrency(totalAmount);
+  ui.netProfit.textContent = toCurrency(netProfit);
+  ui.roi.textContent = `${roi.toFixed(1)}%`;
+  ui.bestOdds.textContent =
     bestOddsValue === null ? "—" : `${bestOddsValue.toFixed(2)}x`;
 
   // Color-code profit/ROI to make gains/losses obvious at a glance.
-  const netProfitEl = document.getElementById("netProfit");
-  const roiEl = document.getElementById("roi");
-  netProfitEl.classList.remove("metric-positive", "metric-negative");
-  roiEl.classList.remove("metric-positive", "metric-negative");
-
-  if (netProfit > 0) netProfitEl.classList.add("metric-positive");
-  if (netProfit < 0) netProfitEl.classList.add("metric-negative");
-  if (roi > 0) roiEl.classList.add("metric-positive");
-  if (roi < 0) roiEl.classList.add("metric-negative");
+  setMetricTone(ui.netProfit, netProfit);
+  setMetricTone(ui.roi, roi);
 }
 
 function parseOddsToDecimal(odds) {
@@ -132,16 +171,14 @@ function parseOddsToDecimal(odds) {
 }
 
 function renderBetsTable(bets) {
-  const tableBody = document.getElementById("betsTableBody");
-  const emptyState = document.getElementById("emptyState");
-  tableBody.innerHTML = "";
+  ui.tableBody.innerHTML = "";
 
   if (!bets.length) {
-    emptyState.style.display = "block";
+    ui.emptyState.style.display = "block";
     return;
   }
 
-  emptyState.style.display = "none";
+  ui.emptyState.style.display = "none";
 
   bets.forEach((bet) => {
     const tr = document.createElement("tr");
@@ -151,11 +188,11 @@ function renderBetsTable(bets) {
       <td>${bet.horseName || "—"}</td>
       <td>${bet.trackName || "—"}</td>
       <td>${bet.betType || "—"}</td>
-      <td>$${Number(bet.betAmount || 0).toFixed(2)}</td>
+      <td>${toCurrency(bet.betAmount)}</td>
       <td class="result-${outcome}">${outcome}</td>
-      <td>$${Number(bet.winnings || 0).toFixed(2)}</td>
+      <td>${toCurrency(bet.winnings)}</td>
     `;
 
-    tableBody.appendChild(tr);
+    ui.tableBody.appendChild(tr);
   });
 }

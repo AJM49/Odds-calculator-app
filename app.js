@@ -99,11 +99,47 @@ if (logoutBtn) {
 ------------------------------------ */
 
 const MIN_BET_AMOUNT = 0.5;
+const EVEN_ODDS_TERMS = new Set(["EVEN", "EVENS", "EVS"]);
 const LIVE_ODDS_SPORT_KEY = "racing_horse";
 const LIVE_ODDS_API_ROOT = "https://api.the-odds-api.com/v4/sports";
 const LIVE_ODDS_KEY_STORAGE = "live_odds_api_key";
 const PAYOUT_API_URL_STORAGE = "payout_api_url";
 const PAYOUT_API_TOKEN_STORAGE = "payout_api_token";
+
+function setResultMessage(message) {
+  resultDiv.innerText = message;
+}
+
+function normalizeOddsInput(oddsStr) {
+  if (typeof oddsStr !== "string") return "";
+  return oddsStr.replaceAll(",", "").trim().toUpperCase();
+}
+
+function getBetFormValues() {
+  const raceRaw = raceInput?.value;
+  return {
+    trackName: (trackInput?.value || "").trim(),
+    horseName: (horseInput?.value || "").trim(),
+    raceNumber: parseInt(raceRaw, 10),
+    betType: betMode?.value || "",
+    betAmount: parseFloat(betAmountInput?.value),
+    odds: (oddsInput?.value || "").trim(),
+    winner: Boolean(isWinnerCheckbox?.checked),
+  };
+}
+
+function isValidBetAmount(amount) {
+  return Number.isFinite(amount) && amount >= MIN_BET_AMOUNT;
+}
+
+async function runWithButtonDisabled(button, task) {
+  button.disabled = true;
+  try {
+    await task();
+  } finally {
+    button.disabled = false;
+  }
+}
 
 // calculateOdds returns the total return including stake, or null for invalid input.
 function calculateOdds(betAmount, oddsStr) {
@@ -115,13 +151,11 @@ function calculateOdds(betAmount, oddsStr) {
     return null;
   }
 
-  if (typeof oddsStr !== "string" || !oddsStr.trim()) return null;
-
-  const normalizedOdds = oddsStr.replaceAll(",", "").trim().toUpperCase();
+  const normalizedOdds = normalizeOddsInput(oddsStr);
   if (!normalizedOdds) return null;
 
   // Special case: "EVEN"/"EVENS"/"EVS" = 1/1
-  if (normalizedOdds === "EVEN" || normalizedOdds === "EVENS" || normalizedOdds === "EVS") {
+  if (EVEN_ODDS_TERMS.has(normalizedOdds)) {
     return betAmount * 2;
   }
 
@@ -376,29 +410,28 @@ if (calculateBtn) {
 
   calculateBtn.addEventListener("click", () => {
 
-    const betAmount = parseFloat(betAmountInput.value);
-    const odds = oddsInput.value.trim();
+    const { betAmount, odds } = getBetFormValues();
 
-    if (!Number.isFinite(betAmount) || betAmount < MIN_BET_AMOUNT) {
-      resultDiv.innerText = "Enter a valid bet amount (minimum $0.50).";
+    if (!isValidBetAmount(betAmount)) {
+      setResultMessage("Enter a valid bet amount (minimum $0.50).");
       return;
     }
 
     if (!odds) {
-      resultDiv.innerText = "Enter odds (fractional A/B, decimal D, or American +N/-N).";
+      setResultMessage("Enter odds (fractional A/B, decimal D, or American +N/-N).");
       return;
     }
 
     const payout = calculateOdds(betAmount, odds);
 
     if (payout === null) {
-      resultDiv.innerText = "Unsupported odds format. Use fractional (A/B), decimal (D), or American (+N/-N).";
+      setResultMessage("Unsupported odds format. Use fractional (A/B), decimal (D), or American (+N/-N).");
       return;
     }
 
     calculatedPayout = payout;
 
-    resultDiv.innerText = "Potential Payout: $" + calculatedPayout.toFixed(2);
+    setResultMessage("Potential Payout: $" + calculatedPayout.toFixed(2));
 
   });
 
@@ -406,44 +439,38 @@ if (calculateBtn) {
 
 if (fetchPayoutApiBtn) {
   fetchPayoutApiBtn.addEventListener("click", async () => {
-    const betAmount = parseFloat(betAmountInput.value);
-    const odds = oddsInput.value.trim();
-    const trackName = (trackInput?.value || "").trim();
-    const horseName = (horseInput?.value || "").trim();
-    const raceNumber = parseInt((raceInput?.value || "").trim(), 10);
-    const betType = betMode.value;
+    const { betAmount, odds, trackName, horseName, raceNumber, betType } = getBetFormValues();
 
-    if (!Number.isFinite(betAmount) || betAmount < MIN_BET_AMOUNT) {
-      resultDiv.innerText = "Enter a valid bet amount (minimum $0.50).";
+    if (!isValidBetAmount(betAmount)) {
+      setResultMessage("Enter a valid bet amount (minimum $0.50).");
       return;
     }
 
     if (!odds) {
-      resultDiv.innerText = "Enter odds before API payout calculation.";
+      setResultMessage("Enter odds before API payout calculation.");
       return;
     }
 
-    fetchPayoutApiBtn.disabled = true;
-    resultDiv.innerText = "Calculating payout via API...";
+    setResultMessage("Calculating payout via API...");
 
-    try {
-      const response = await fetchPayoutFromApi({
-        betAmount,
-        odds,
-        betType,
-        trackName,
-        horseName,
-        raceNumber: Number.isInteger(raceNumber) ? raceNumber : null
-      });
+    await runWithButtonDisabled(fetchPayoutApiBtn, async () => {
+      try {
+        const response = await fetchPayoutFromApi({
+          betAmount,
+          odds,
+          betType,
+          trackName,
+          horseName,
+          raceNumber: Number.isInteger(raceNumber) ? raceNumber : null
+        });
 
-      calculatedPayout = response.payout;
-      resultDiv.innerText = `API Payout: $${calculatedPayout.toFixed(2)}`;
-    } catch (error) {
-      console.error(error);
-      resultDiv.innerText = error.message || "Unable to calculate payout via API.";
-    } finally {
-      fetchPayoutApiBtn.disabled = false;
-    }
+        calculatedPayout = response.payout;
+        setResultMessage(`API Payout: $${calculatedPayout.toFixed(2)}`);
+      } catch (error) {
+        console.error(error);
+        setResultMessage(error.message || "Unable to calculate payout via API.");
+      }
+    });
   });
 }
 
@@ -462,15 +489,7 @@ if (submitBetBtn) {
       return;
     }
 
-    const trackName = trackInput.value.trim();
-    const horseName = horseInput.value.trim();
-    const raceNumber = parseInt(raceInput.value, 10);
-
-    const betType = betMode.value;
-    const betAmount = parseFloat(betAmountInput.value);
-    const odds = oddsInput.value.trim();
-
-    const winner = isWinnerCheckbox.checked;
+    const { trackName, horseName, raceNumber, betType, betAmount, odds, winner } = getBetFormValues();
 
     if (
       !trackName ||
@@ -518,13 +537,12 @@ if (submitBetBtn) {
 
         outcome: outcome,
 
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        ,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         createdAtMs: Date.now()
 
       });
 
-      resultDiv.innerText = "Bet saved.";
+      setResultMessage("Bet saved.");
 
       loadBetHistory();
 
@@ -532,7 +550,7 @@ if (submitBetBtn) {
 
       console.error(error);
 
-      resultDiv.innerText = "Error saving bet.";
+      setResultMessage("Error saving bet.");
 
     }
 
@@ -667,9 +685,7 @@ if (shareBtn) {
 
   shareBtn.addEventListener("click", () => {
 
-    const track = trackInput ? trackInput.value : "";
-    const horse = horseInput ? horseInput.value : "";
-    const odds = oddsInput ? oddsInput.value : "";
+    const { trackName: track, horseName: horse, odds } = getBetFormValues();
 
     const text =
       "My bet: " +
@@ -689,40 +705,40 @@ if (shareBtn) {
 
 if (fetchPayoutBtn) {
   fetchPayoutBtn.addEventListener("click", async () => {
-    const horseName = (horseInput?.value || "").trim();
-    const betAmount = parseFloat(betAmountInput.value);
+    const { horseName, betAmount } = getBetFormValues();
 
     if (!horseName) {
-      resultDiv.innerText = "Enter a horse name first to fetch live odds.";
+      setResultMessage("Enter a horse name first to fetch live odds.");
       return;
     }
 
-    fetchPayoutBtn.disabled = true;
-    resultDiv.innerText = "Fetching live odds...";
+    setResultMessage("Fetching live odds...");
 
-    try {
-      const liveOdds = await fetchLiveOddsForHorse(horseName);
-      oddsInput.value = String(liveOdds.decimalPrice.toFixed(2));
+    await runWithButtonDisabled(fetchPayoutBtn, async () => {
+      try {
+        const liveOdds = await fetchLiveOddsForHorse(horseName);
+        oddsInput.value = String(liveOdds.decimalPrice.toFixed(2));
 
-      if (Number.isFinite(betAmount) && betAmount >= MIN_BET_AMOUNT) {
-        const payout = calculateOdds(betAmount, oddsInput.value);
-        if (payout !== null) {
-          calculatedPayout = payout;
-          resultDiv.innerText =
-            `Live odds loaded (${liveOdds.bookmakerName}): ${oddsInput.value}. ` +
-            `Potential Payout: $${calculatedPayout.toFixed(2)}`;
-          return;
+        if (isValidBetAmount(betAmount)) {
+          const payout = calculateOdds(betAmount, oddsInput.value);
+          if (payout !== null) {
+            calculatedPayout = payout;
+            setResultMessage(
+              `Live odds loaded (${liveOdds.bookmakerName}): ${oddsInput.value}. ` +
+              `Potential Payout: $${calculatedPayout.toFixed(2)}`
+            );
+            return;
+          }
         }
-      }
 
-      resultDiv.innerText =
-        `Live odds loaded (${liveOdds.bookmakerName}): ${oddsInput.value}. Click Calculate for payout.`;
-    } catch (error) {
-      console.error(error);
-      resultDiv.innerText = error.message || "Unable to fetch live odds.";
-    } finally {
-      fetchPayoutBtn.disabled = false;
-    }
+        setResultMessage(
+          `Live odds loaded (${liveOdds.bookmakerName}): ${oddsInput.value}. Click Calculate for payout.`
+        );
+      } catch (error) {
+        console.error(error);
+        setResultMessage(error.message || "Unable to fetch live odds.");
+      }
+    });
   });
 }
 
