@@ -58,8 +58,7 @@ let unsubscribeHistory = null;
 auth.onAuthStateChanged(user => {
 
   if (!user) {
-    const nextPage = window.location.pathname.split("/").pop() || "index.html";
-    window.location.href = `login.html?next=${encodeURIComponent(nextPage)}`;
+    window.location.href = "login.html?next=index.html";
     return;
   }
 

@@ -8,6 +8,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script>
     // Firebase config (same as other pages)
     const firebaseConfig = {
@@ -18,6 +19,28 @@
     };
 
     firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function getSafeNextPage() {
+      const allowedPages = new Set(["index.html", "dashboard.html", "admin.html"]);
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+      if (!next || !allowedPages.has(next)) return "index.html";
+      return next;
+    }
+
+    function preserveNextOnAuthLinks() {
+      const nextPage = getSafeNextPage();
+      const loginLink = document.getElementById("loginLink");
+      if (!loginLink) return;
+      loginLink.href = `login.html?next=${encodeURIComponent(nextPage)}`;
+    }
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) return;
+      const nextPage = getSafeNextPage();
+      window.location.href = nextPage;
+    });
 
     async function signUp() {
       const email = document.getElementById("email").value;
@@ -26,13 +49,22 @@
       try {
         const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
         console.log("✅ Sign up successful:", result.user.email);
-        alert("Account created! Please log in.");
-        window.location.href = "login.html";
+
+        // Ensure user profile exists for role-based checks used by admin flow.
+        await db.collection("users").doc(result.user.uid).set(
+          { email: result.user.email, role: "user", createdAtMs: Date.now() },
+          { merge: true }
+        );
+
+        const nextPage = getSafeNextPage();
+        window.location.href = nextPage;
       } catch (err) {
         console.error("❌ Sign up error:", err);
         alert("Sign up failed: " + err.message);
       }
     }
+
+    window.addEventListener("DOMContentLoaded", preserveNextOnAuthLinks);
   </script>
 </head>
 <body>
@@ -40,6 +72,6 @@
   <input type="email" id="email" placeholder="Email" /><br />
   <input type="password" id="password" placeholder="Password" /><br />
   <button onclick="signUp()">Sign Up</button><br />
-  <a href="login.html">Already have an account? Log in</a>
+  <a id="loginLink" href="login.html">Already have an account? Log in</a>
 </body>
 </html>

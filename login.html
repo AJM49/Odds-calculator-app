@@ -18,6 +18,7 @@
     };
 
     firebase.initializeApp(firebaseConfig);
+    let redirecting = false;
 
     function getSafeNextPage() {
       const allowedPages = new Set(["index.html", "dashboard.html", "admin.html"]);
@@ -28,8 +29,17 @@
     }
 
     function redirectAfterLogin() {
+      if (redirecting) return;
+      redirecting = true;
       const nextPage = getSafeNextPage();
       window.location.href = nextPage;
+    }
+
+    function preserveNextOnAuthLinks() {
+      const nextPage = getSafeNextPage();
+      const signupLink = document.getElementById("signupLink");
+      if (!signupLink) return;
+      signupLink.href = `signup.html?next=${encodeURIComponent(nextPage)}`;
     }
 
     firebase.auth().onAuthStateChanged((user) => {
@@ -51,6 +61,8 @@
         alert("Login failed: " + err.message);
       }
     }
+
+    window.addEventListener("DOMContentLoaded", preserveNextOnAuthLinks);
   </script>
 </head>
 <body>
@@ -58,5 +70,9 @@
   <input type="email" id="email" placeholder="Email" /><br />
   <input type="password" id="password" placeholder="Password" /><br />
   <button onclick="login()">Log In</button>
+  <p style="text-align:center;">
+    Need an account?
+    <a id="signupLink" href="signup.html">Sign up</a>
+  </p>
 </body>
 </html>
