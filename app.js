@@ -99,6 +99,20 @@ if (logoutBtn) {
 
 const MIN_BET_AMOUNT = 0.5;
 const EVEN_ODDS_TERMS = new Set(["EVEN", "EVENS", "EVS"]);
+const BET_TYPE_CONFIG = {
+  win: { legs: 1, profitFactor: 1 },
+  place: { legs: 1, profitFactor: 0.65 },
+  show: { legs: 1, profitFactor: 0.45 },
+  exacta: { legs: 2, profitFactor: 1 },
+  exacta_box: { legs: 2, profitFactor: 0.9 },
+  trifecta: { legs: 3, profitFactor: 1 },
+  trifecta_key: { legs: 3, profitFactor: 0.95 },
+  superfecta: { legs: 4, profitFactor: 1 },
+  pick3: { legs: 3, profitFactor: 1 },
+  pick4: { legs: 4, profitFactor: 1 },
+  pick5: { legs: 5, profitFactor: 1 },
+  pick6: { legs: 6, profitFactor: 1 },
+};
 const LIVE_ODDS_SPORT_KEY = "racing_horse";
 const LIVE_ODDS_API_ROOT = "https://api.the-odds-api.com/v4/sports";
 const LIVE_ODDS_KEY_STORAGE = "live_odds_api_key";
@@ -140,25 +154,16 @@ async function runWithButtonDisabled(button, task) {
   }
 }
 
-// calculateOdds returns the total return including stake, or null for invalid input.
-function calculateOdds(betAmount, oddsStr) {
-  if (
-    typeof betAmount !== "number" ||
-    !Number.isFinite(betAmount) ||
-    betAmount < MIN_BET_AMOUNT
-  ) {
-    return null;
-  }
-
+function parseOddsToDecimalMultiplier(oddsStr) {
   const normalizedOdds = normalizeOddsInput(oddsStr);
   if (!normalizedOdds) return null;
 
-  // Special case: "EVEN"/"EVENS"/"EVS" = 1/1
+  // Special case: "EVEN"/"EVENS"/"EVS" = 1/1 => decimal multiplier 2.0
   if (EVEN_ODDS_TERMS.has(normalizedOdds)) {
-    return betAmount * 2;
+    return 2;
   }
 
-  // Fractional odds: "A/B"
+  // Fractional odds: "A/B" => decimal multiplier = 1 + A/B
   if (normalizedOdds.includes("/")) {
     const parts = normalizedOdds.split("/");
     if (parts.length !== 2) return null;
@@ -175,35 +180,58 @@ function calculateOdds(betAmount, oddsStr) {
       return null;
     }
 
-    const profit = betAmount * (num / den);
-    return betAmount + profit;
+    return 1 + num / den;
   }
 
-  // American odds: "+150" or "-200" (integer and |n| >= 100)
+  // American odds: "+150" or "-200" (integer and |n| >= 100) => decimal multiplier
   if (/^[+-]\d+$/.test(normalizedOdds)) {
     const n = Number(normalizedOdds);
     if (!Number.isFinite(n) || Math.abs(n) < 100) return null;
 
     if (n > 0) {
-      // +150 means $100 bet wins $150 -> profit = bet * (n/100)
-      const profit = betAmount * (n / 100);
-      return betAmount + profit;
+      return 1 + n / 100;
     }
 
-    // -200 means bet $200 to win $100 -> profit = bet * (100 / 200)
-    const profit = betAmount * (100 / Math.abs(n));
-    return betAmount + profit;
+    return 1 + 100 / Math.abs(n);
   }
 
-  // Decimal odds: e.g., "3.5" (must be > 1.0 for a valid return)
+  // Decimal odds: e.g., "3.5"
   if (/^\d+(?:\.\d+)?$/.test(normalizedOdds)) {
     const maybeDecimal = Number(normalizedOdds);
     if (!Number.isFinite(maybeDecimal) || maybeDecimal <= 1) return null;
-    return betAmount * maybeDecimal;
+    return maybeDecimal;
   }
 
-  // Unsupported format
   return null;
+}
+
+function isSupportedBetType(betType) {
+  return Object.prototype.hasOwnProperty.call(BET_TYPE_CONFIG, betType);
+}
+
+// calculateOdds returns total return including stake, adjusted by bet type profile.
+function calculateOdds(betAmount, oddsStr, betType = "win") {
+  if (
+    typeof betAmount !== "number" ||
+    !Number.isFinite(betAmount) ||
+    betAmount < MIN_BET_AMOUNT
+  ) {
+    return null;
+  }
+
+  if (!isSupportedBetType(betType)) {
+    return null;
+  }
+
+  const decimalMultiplier = parseOddsToDecimalMultiplier(oddsStr);
+  if (!decimalMultiplier) return null;
+
+  const { legs, profitFactor } = BET_TYPE_CONFIG[betType];
+  const adjustedSingleLegMultiplier = 1 + (decimalMultiplier - 1) * profitFactor;
+  const totalMultiplier = Math.pow(adjustedSingleLegMultiplier, legs);
+
+  if (!Number.isFinite(totalMultiplier) || totalMultiplier <= 0) return null;
+  return betAmount * totalMultiplier;
 }
 
 function promptForPayoutApiConfig() {
@@ -409,7 +437,7 @@ if (calculateBtn) {
 
   calculateBtn.addEventListener("click", () => {
 
-    const { betAmount, odds } = getBetFormValues();
+    const { betAmount, odds, betType } = getBetFormValues();
 
     if (!isValidBetAmount(betAmount)) {
       setResultMessage("Enter a valid bet amount (minimum $0.50).");
@@ -421,10 +449,15 @@ if (calculateBtn) {
       return;
     }
 
-    const payout = calculateOdds(betAmount, odds);
+    if (!isSupportedBetType(betType)) {
+      setResultMessage("Unsupported bet type selected.");
+      return;
+    }
+
+    const payout = calculateOdds(betAmount, odds, betType);
 
     if (payout === null) {
-      setResultMessage("Unsupported odds format. Use fractional (A/B), decimal (D), or American (+N/-N).");
+      setResultMessage("Unsupported odds or bet type. Use valid odds format and bet mode.");
       return;
     }
 
@@ -447,6 +480,11 @@ if (fetchPayoutApiBtn) {
 
     if (!odds) {
       setResultMessage("Enter odds before API payout calculation.");
+      return;
+    }
+
+    if (!isSupportedBetType(betType)) {
+      setResultMessage("Unsupported bet type selected.");
       return;
     }
 
@@ -497,18 +535,19 @@ if (submitBetBtn) {
       raceNumber <= 0 ||
       !Number.isFinite(betAmount) ||
       betAmount < MIN_BET_AMOUNT ||
-      !odds
+      !odds ||
+      !isSupportedBetType(betType)
     ) {
 
-      alert("Fill all required fields with valid values (race number > 0, minimum bet $0.50).");
+      alert("Fill all required fields with valid values (race number > 0, minimum bet $0.50, supported bet type).");
 
       return;
     }
 
-    const payout = calculateOdds(betAmount, odds);
+    const payout = calculateOdds(betAmount, odds, betType);
 
     if (payout === null) {
-      alert("Unsupported odds format. Use fractional (A/B), decimal (D), or American (+N/-N). [Example: 4/1 or 3.5 or +150]");
+      alert("Unsupported odds format or bet mode. Use fractional (A/B), decimal (D), or American (+N/-N).");
       return;
     }
 
@@ -704,7 +743,7 @@ if (shareBtn) {
 
 if (fetchPayoutBtn) {
   fetchPayoutBtn.addEventListener("click", async () => {
-    const { horseName, betAmount } = getBetFormValues();
+    const { horseName, betAmount, betType } = getBetFormValues();
 
     if (!horseName) {
       setResultMessage("Enter a horse name first to fetch live odds.");
@@ -718,8 +757,8 @@ if (fetchPayoutBtn) {
         const liveOdds = await fetchLiveOddsForHorse(horseName);
         oddsInput.value = String(liveOdds.decimalPrice.toFixed(2));
 
-        if (isValidBetAmount(betAmount)) {
-          const payout = calculateOdds(betAmount, oddsInput.value);
+        if (isValidBetAmount(betAmount) && isSupportedBetType(betType)) {
+          const payout = calculateOdds(betAmount, oddsInput.value, betType);
           if (payout !== null) {
             calculatedPayout = payout;
             setResultMessage(
