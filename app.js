@@ -26,6 +26,7 @@ const db = firebase.firestore();
 ------------------------------------ */
 
 const calculateBtn = document.getElementById("calculateBtn");
+const fetchPayoutApiBtn = document.getElementById("fetchPayoutApiBtn");
 const submitBetBtn = document.getElementById("submitBetBtn");
 const shareBtn = document.getElementById("shareBtn");
 const fetchPayoutBtn = document.getElementById("fetchPayoutBtn");
@@ -96,6 +97,8 @@ const MIN_BET_AMOUNT = 0.5;
 const LIVE_ODDS_SPORT_KEY = "racing_horse";
 const LIVE_ODDS_API_ROOT = "https://api.the-odds-api.com/v4/sports";
 const LIVE_ODDS_KEY_STORAGE = "live_odds_api_key";
+const PAYOUT_API_URL_STORAGE = "payout_api_url";
+const PAYOUT_API_TOKEN_STORAGE = "payout_api_token";
 
 // calculateOdds returns the total return including stake, or null for invalid input.
 function calculateOdds(betAmount, oddsStr) {
@@ -163,6 +166,104 @@ function calculateOdds(betAmount, oddsStr) {
 
   // Unsupported format
   return null;
+}
+
+function promptForPayoutApiConfig() {
+  const existingUrl = localStorage.getItem(PAYOUT_API_URL_STORAGE) || "";
+  const existingToken = localStorage.getItem(PAYOUT_API_TOKEN_STORAGE) || "";
+
+  const apiUrlInput = window.prompt(
+    "Enter payout API URL (POST endpoint). Example: https://api.example.com/payout",
+    existingUrl
+  );
+
+  if (!apiUrlInput || !apiUrlInput.trim()) return null;
+  const apiUrl = apiUrlInput.trim();
+
+  let parsed;
+  try {
+    parsed = new URL(apiUrl);
+  } catch {
+    throw new Error("Invalid payout API URL.");
+  }
+
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error("Payout API URL must start with http:// or https://.");
+  }
+
+  const tokenInput = window.prompt(
+    "Optional bearer token for payout API (leave blank if not required).",
+    existingToken
+  );
+  const token = (tokenInput || "").trim();
+
+  localStorage.setItem(PAYOUT_API_URL_STORAGE, apiUrl);
+  if (token) {
+    localStorage.setItem(PAYOUT_API_TOKEN_STORAGE, token);
+  } else {
+    localStorage.removeItem(PAYOUT_API_TOKEN_STORAGE);
+  }
+
+  return { apiUrl, token };
+}
+
+function getPayoutApiConfig() {
+  const apiUrl = localStorage.getItem(PAYOUT_API_URL_STORAGE) || "";
+  const token = localStorage.getItem(PAYOUT_API_TOKEN_STORAGE) || "";
+  return { apiUrl, token };
+}
+
+function parsePayoutFromApiResponse(payload) {
+  const candidates = [
+    payload?.payout,
+    payload?.totalReturn,
+    payload?.data?.payout,
+    payload?.data?.totalReturn
+  ];
+
+  for (const candidate of candidates) {
+    const num = Number(candidate);
+    if (Number.isFinite(num) && num >= 0) {
+      return num;
+    }
+  }
+
+  return null;
+}
+
+async function fetchPayoutFromApi(input) {
+  let { apiUrl, token } = getPayoutApiConfig();
+  if (!apiUrl) {
+    const prompted = promptForPayoutApiConfig();
+    if (!prompted) {
+      throw new Error("Payout API URL is required.");
+    }
+    apiUrl = prompted.apiUrl;
+    token = prompted.token;
+  }
+
+  const headers = { "Content-Type": "application/json" };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Payout API request failed (${response.status}).`);
+  }
+
+  const payload = await response.json();
+  const payout = parsePayoutFromApiResponse(payload);
+  if (payout === null) {
+    throw new Error("Payout API response missing numeric payout.");
+  }
+
+  return { payout, payload };
 }
 
 function promptForLiveOddsApiKey() {
@@ -296,6 +397,49 @@ if (calculateBtn) {
 
   });
 
+}
+
+if (fetchPayoutApiBtn) {
+  fetchPayoutApiBtn.addEventListener("click", async () => {
+    const betAmount = parseFloat(betAmountInput.value);
+    const odds = oddsInput.value.trim();
+    const trackName = (trackInput?.value || "").trim();
+    const horseName = (horseInput?.value || "").trim();
+    const raceNumber = parseInt((raceInput?.value || "").trim(), 10);
+    const betType = betMode.value;
+
+    if (!Number.isFinite(betAmount) || betAmount < MIN_BET_AMOUNT) {
+      resultDiv.innerText = "Enter a valid bet amount (minimum $0.50).";
+      return;
+    }
+
+    if (!odds) {
+      resultDiv.innerText = "Enter odds before API payout calculation.";
+      return;
+    }
+
+    fetchPayoutApiBtn.disabled = true;
+    resultDiv.innerText = "Calculating payout via API...";
+
+    try {
+      const response = await fetchPayoutFromApi({
+        betAmount,
+        odds,
+        betType,
+        trackName,
+        horseName,
+        raceNumber: Number.isInteger(raceNumber) ? raceNumber : null
+      });
+
+      calculatedPayout = response.payout;
+      resultDiv.innerText = `API Payout: $${calculatedPayout.toFixed(2)}`;
+    } catch (error) {
+      console.error(error);
+      resultDiv.innerText = error.message || "Unable to calculate payout via API.";
+    } finally {
+      fetchPayoutApiBtn.disabled = false;
+    }
+  });
 }
 
 /* ------------------------------------
