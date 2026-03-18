@@ -60,7 +60,7 @@ body {
 
 .stats-container {
   display: grid;
-  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
   gap: 12px;
 }
 
@@ -83,6 +83,14 @@ body {
   font-size: 1.35rem;
   font-weight: 700;
   color: #0f172a;
+}
+
+.metric-positive {
+  color: #0f9d58 !important;
+}
+
+.metric-negative {
+  color: #d93025 !important;
 }
 
 .table-card {
