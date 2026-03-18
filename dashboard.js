@@ -3,7 +3,7 @@ const db = firebase.firestore();
 
 auth.onAuthStateChanged((user) => {
   if (!user) {
-    window.location.href = "login.html";
+    window.location.href = "login.html?next=dashboard.html";
     return;
   }
 

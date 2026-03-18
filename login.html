@@ -19,6 +19,25 @@
 
     firebase.initializeApp(firebaseConfig);
 
+    function getSafeNextPage() {
+      const allowedPages = new Set(["index.html", "dashboard.html", "admin.html"]);
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+      if (!next || !allowedPages.has(next)) return "index.html";
+      return next;
+    }
+
+    function redirectAfterLogin() {
+      const nextPage = getSafeNextPage();
+      window.location.href = nextPage;
+    }
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        redirectAfterLogin();
+      }
+    });
+
     async function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -26,7 +45,7 @@
       try {
         const result = await firebase.auth().signInWithEmailAndPassword(email, password);
         console.log("✅ Logged in as:", result.user.email);
-        window.location.href = "index.html";
+        redirectAfterLogin();
       } catch (err) {
         console.error("❌ Login error:", err);
         alert("Login failed: " + err.message);

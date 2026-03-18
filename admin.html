@@ -71,7 +71,7 @@
 
     auth.onAuthStateChanged(async (user) => {
       if (!user) {
-        document.getElementById('adminStatus').innerText = 'Not signed in.';
+        window.location.href = "login.html?next=admin.html";
         return;
       }
       const doc = await db.collection('users').doc(user.uid).get();

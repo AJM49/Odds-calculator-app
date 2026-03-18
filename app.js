@@ -56,7 +56,8 @@ let calculatedPayout = 0;
 auth.onAuthStateChanged(user => {
 
   if (!user) {
-    window.location.href = "login.html";
+    const nextPage = window.location.pathname.split("/").pop() || "index.html";
+    window.location.href = `login.html?next=${encodeURIComponent(nextPage)}`;
     return;
   }
 
@@ -80,7 +81,7 @@ if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
 
     auth.signOut().then(() => {
-      window.location.href = "login.html";
+      window.location.href = "login.html?next=index.html";
     });
 
   });
@@ -91,46 +92,69 @@ if (logoutBtn) {
 5. Odds Calculator (improved)
 ------------------------------------ */
 
+const MIN_BET_AMOUNT = 0.5;
+
 // calculateOdds returns the total return including stake, or null for invalid input.
 function calculateOdds(betAmount, oddsStr) {
-  // Validate bet amount
-  if (typeof betAmount !== 'number' || isNaN(betAmount) || betAmount <= 0) {
+  if (
+    typeof betAmount !== "number" ||
+    !Number.isFinite(betAmount) ||
+    betAmount < MIN_BET_AMOUNT
+  ) {
     return null;
   }
 
-  if (typeof oddsStr !== 'string' || !oddsStr.trim()) return null;
+  if (typeof oddsStr !== "string" || !oddsStr.trim()) return null;
 
-  const odds = oddsStr.trim();
+  const normalizedOdds = oddsStr.replaceAll(",", "").trim().toUpperCase();
+  if (!normalizedOdds) return null;
+
+  // Special case: "EVEN"/"EVENS"/"EVS" = 1/1
+  if (normalizedOdds === "EVEN" || normalizedOdds === "EVENS" || normalizedOdds === "EVS") {
+    return betAmount * 2;
+  }
 
   // Fractional odds: "A/B"
-  if (odds.includes('/')) {
-    const parts = odds.split('/');
+  if (normalizedOdds.includes("/")) {
+    const parts = normalizedOdds.split("/");
     if (parts.length !== 2) return null;
-    const num = parseFloat(parts[0]);
-    const den = parseFloat(parts[1]);
-    if (isNaN(num) || isNaN(den) || den === 0) return null;
+
+    const num = Number(parts[0].trim());
+    const den = Number(parts[1].trim());
+
+    if (
+      !Number.isFinite(num) ||
+      !Number.isFinite(den) ||
+      num <= 0 ||
+      den <= 0
+    ) {
+      return null;
+    }
+
     const profit = betAmount * (num / den);
     return betAmount + profit;
   }
 
-  // American odds: "+150" or "-200"
-  if (/^[+-]\d+(?:\.\d+)?$/.test(odds)) {
-    const n = parseFloat(odds);
-    if (isNaN(n) || n === 0) return null;
+  // American odds: "+150" or "-200" (integer and |n| >= 100)
+  if (/^[+-]\d+$/.test(normalizedOdds)) {
+    const n = Number(normalizedOdds);
+    if (!Number.isFinite(n) || Math.abs(n) < 100) return null;
+
     if (n > 0) {
       // +150 means $100 bet wins $150 -> profit = bet * (n/100)
       const profit = betAmount * (n / 100);
       return betAmount + profit;
-    } else {
-      // -200 means bet $200 to win $100 -> profit = bet * (100 / 200)
-      const profit = betAmount * (100 / Math.abs(n));
-      return betAmount + profit;
     }
+
+    // -200 means bet $200 to win $100 -> profit = bet * (100 / 200)
+    const profit = betAmount * (100 / Math.abs(n));
+    return betAmount + profit;
   }
 
-  // Decimal odds: e.g., "3.5" (total return including stake)
-  const maybeDecimal = parseFloat(odds);
-  if (!isNaN(maybeDecimal) && maybeDecimal > 0) {
+  // Decimal odds: e.g., "3.5" (must be > 1.0 for a valid return)
+  if (/^\d+(?:\.\d+)?$/.test(normalizedOdds)) {
+    const maybeDecimal = Number(normalizedOdds);
+    if (!Number.isFinite(maybeDecimal) || maybeDecimal <= 1) return null;
     return betAmount * maybeDecimal;
   }
 
@@ -149,8 +173,8 @@ if (calculateBtn) {
     const betAmount = parseFloat(betAmountInput.value);
     const odds = oddsInput.value.trim();
 
-    if (isNaN(betAmount) || betAmount <= 0) {
-      resultDiv.innerText = "Enter a valid bet amount (> 0).";
+    if (!Number.isFinite(betAmount) || betAmount < MIN_BET_AMOUNT) {
+      resultDiv.innerText = "Enter a valid bet amount (minimum $0.50).";
       return;
     }
 
@@ -199,9 +223,17 @@ if (submitBetBtn) {
 
     const winner = isWinnerCheckbox.checked;
 
-    if (!trackName || !horseName || isNaN(betAmount) || betAmount <= 0 || !odds) {
+    if (
+      !trackName ||
+      !horseName ||
+      !Number.isInteger(raceNumber) ||
+      raceNumber <= 0 ||
+      !Number.isFinite(betAmount) ||
+      betAmount < MIN_BET_AMOUNT ||
+      !odds
+    ) {
 
-      alert("Fill all required fields with valid values.");
+      alert("Fill all required fields with valid values (race number > 0, minimum bet $0.50).");
 
       return;
     }
