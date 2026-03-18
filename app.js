@@ -118,6 +118,10 @@ const LIVE_ODDS_API_ROOT = "https://api.the-odds-api.com/v4/sports";
 const LIVE_ODDS_KEY_STORAGE = "live_odds_api_key";
 const PAYOUT_API_URL_STORAGE = "payout_api_url";
 const PAYOUT_API_TOKEN_STORAGE = "payout_api_token";
+const MAX_BET_AMOUNT = 1_000_000;
+const MAX_TEXT_INPUT_LENGTH = 80;
+const MAX_RACE_NUMBER = 999;
+const MAX_PAYOUT_CAP = 100_000_000;
 
 function setResultMessage(message) {
   resultDiv.innerText = message;
@@ -142,7 +146,11 @@ function getBetFormValues() {
 }
 
 function isValidBetAmount(amount) {
-  return Number.isFinite(amount) && amount >= MIN_BET_AMOUNT;
+  return (
+    Number.isFinite(amount) &&
+    amount >= MIN_BET_AMOUNT &&
+    amount <= MAX_BET_AMOUNT
+  );
 }
 
 async function runWithButtonDisabled(button, task) {
@@ -152,6 +160,32 @@ async function runWithButtonDisabled(button, task) {
   } finally {
     button.disabled = false;
   }
+}
+
+function sanitizeText(value) {
+  return String(value || "").trim();
+}
+
+function isValidTextInput(value) {
+  const trimmed = sanitizeText(value);
+  return trimmed.length > 0 && trimmed.length <= MAX_TEXT_INPUT_LENGTH;
+}
+
+function isValidRaceNumber(value) {
+  return Number.isInteger(value) && value > 0 && value <= MAX_RACE_NUMBER;
+}
+
+function validateOddsInput(odds) {
+  if (!sanitizeText(odds)) {
+    return "Enter odds (fractional A/B, decimal D, or American +N/-N).";
+  }
+  if (sanitizeText(odds).length > 20) {
+    return "Odds input is too long.";
+  }
+  if (parseOddsToDecimalMultiplier(odds) === null) {
+    return "Unsupported odds format. Use fractional (A/B), decimal (D), or American (+N/-N).";
+  }
+  return null;
 }
 
 function parseOddsToDecimalMultiplier(oddsStr) {
@@ -231,7 +265,9 @@ function calculateOdds(betAmount, oddsStr, betType = "win") {
   const totalMultiplier = Math.pow(adjustedSingleLegMultiplier, legs);
 
   if (!Number.isFinite(totalMultiplier) || totalMultiplier <= 0) return null;
-  return betAmount * totalMultiplier;
+  const payout = betAmount * totalMultiplier;
+  if (!Number.isFinite(payout) || payout <= 0 || payout > MAX_PAYOUT_CAP) return null;
+  return payout;
 }
 
 function promptForPayoutApiConfig() {
@@ -440,12 +476,13 @@ if (calculateBtn) {
     const { betAmount, odds, betType } = getBetFormValues();
 
     if (!isValidBetAmount(betAmount)) {
-      setResultMessage("Enter a valid bet amount (minimum $0.50).");
+      setResultMessage(`Enter a valid bet amount (minimum $0.50, maximum $${MAX_BET_AMOUNT.toLocaleString()}).`);
       return;
     }
 
-    if (!odds) {
-      setResultMessage("Enter odds (fractional A/B, decimal D, or American +N/-N).");
+    const oddsValidationError = validateOddsInput(odds);
+    if (oddsValidationError) {
+      setResultMessage(oddsValidationError);
       return;
     }
 
@@ -457,7 +494,7 @@ if (calculateBtn) {
     const payout = calculateOdds(betAmount, odds, betType);
 
     if (payout === null) {
-      setResultMessage("Unsupported odds or bet type. Use valid odds format and bet mode.");
+      setResultMessage("Unsupported odds or bet type, or payout exceeds allowed range.");
       return;
     }
 
@@ -474,12 +511,13 @@ if (fetchPayoutApiBtn) {
     const { betAmount, odds, trackName, horseName, raceNumber, betType } = getBetFormValues();
 
     if (!isValidBetAmount(betAmount)) {
-      setResultMessage("Enter a valid bet amount (minimum $0.50).");
+      setResultMessage(`Enter a valid bet amount (minimum $0.50, maximum $${MAX_BET_AMOUNT.toLocaleString()}).`);
       return;
     }
 
-    if (!odds) {
-      setResultMessage("Enter odds before API payout calculation.");
+    const oddsValidationError = validateOddsInput(odds);
+    if (oddsValidationError) {
+      setResultMessage(oddsValidationError);
       return;
     }
 
@@ -528,18 +566,29 @@ if (submitBetBtn) {
 
     const { trackName, horseName, raceNumber, betType, betAmount, odds, winner } = getBetFormValues();
 
-    if (
-      !trackName ||
-      !horseName ||
-      !Number.isInteger(raceNumber) ||
-      raceNumber <= 0 ||
-      !Number.isFinite(betAmount) ||
-      betAmount < MIN_BET_AMOUNT ||
-      !odds ||
-      !isSupportedBetType(betType)
-    ) {
+    if (!isValidTextInput(trackName) || !isValidTextInput(horseName)) {
+      alert(`Track and horse names are required (max ${MAX_TEXT_INPUT_LENGTH} characters).`);
+      return;
+    }
 
-      alert("Fill all required fields with valid values (race number > 0, minimum bet $0.50, supported bet type).");
+    if (!isValidRaceNumber(raceNumber)) {
+      alert(`Race number must be an integer between 1 and ${MAX_RACE_NUMBER}.`);
+      return;
+    }
+
+    if (!isValidBetAmount(betAmount)) {
+      alert(`Bet amount must be between $${MIN_BET_AMOUNT.toFixed(2)} and $${MAX_BET_AMOUNT.toLocaleString()}.`);
+      return;
+    }
+
+    const oddsValidationError = validateOddsInput(odds);
+    if (oddsValidationError) {
+      alert(oddsValidationError);
+      return;
+    }
+
+    if (!isSupportedBetType(betType)) {
+      alert("Unsupported bet type selected.");
 
       return;
     }
@@ -547,7 +596,7 @@ if (submitBetBtn) {
     const payout = calculateOdds(betAmount, odds, betType);
 
     if (payout === null) {
-      alert("Unsupported odds format or bet mode. Use fractional (A/B), decimal (D), or American (+N/-N).");
+      alert("Invalid payout result. Check odds/bet type and try again.");
       return;
     }
 
@@ -727,11 +776,11 @@ if (shareBtn) {
 
     const text =
       "My bet: " +
-      horse +
+      sanitizeText(horse) +
       " at " +
-      track +
+      sanitizeText(track) +
       " odds " +
-      odds;
+      sanitizeText(odds);
 
     navigator.clipboard.writeText(text);
 
@@ -745,8 +794,8 @@ if (fetchPayoutBtn) {
   fetchPayoutBtn.addEventListener("click", async () => {
     const { horseName, betAmount, betType } = getBetFormValues();
 
-    if (!horseName) {
-      setResultMessage("Enter a horse name first to fetch live odds.");
+    if (!isValidTextInput(horseName)) {
+      setResultMessage(`Enter a valid horse name (1-${MAX_TEXT_INPUT_LENGTH} chars) first to fetch live odds.`);
       return;
     }
 
