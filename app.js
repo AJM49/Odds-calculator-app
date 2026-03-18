@@ -50,6 +50,7 @@ const logoutBtn = document.getElementById("logoutBtn");
 const authStatus = document.getElementById("authStatus");
 
 let calculatedPayout = 0;
+let unsubscribeHistory = null;
 
 /* ------------------------------------
 3. Auth State
@@ -69,7 +70,7 @@ auth.onAuthStateChanged(user => {
     authStatus.innerText = "Logged in: " + user.email;
   }
 
-  loadBetHistory();
+  startBetHistoryTracking(user.uid);
 
 });
 
@@ -82,6 +83,10 @@ if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
 
     auth.signOut().then(() => {
+      if (typeof unsubscribeHistory === "function") {
+        unsubscribeHistory();
+        unsubscribeHistory = null;
+      }
       window.location.href = "login.html?next=index.html";
     });
 
@@ -514,6 +519,8 @@ if (submitBetBtn) {
         outcome: outcome,
 
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        ,
+        createdAtMs: Date.now()
 
       });
 
@@ -552,48 +559,11 @@ async function loadBetHistory() {
     const snapshot = await db
       .collection("bets")
       .where("userId", "==", user.uid)
-      .orderBy("timestamp", "desc")
-      .limit(10)
+      .limit(50)
       .get();
-
-    if (snapshot.empty) {
-
-      historySection.innerHTML = "No bets yet.";
-
-      return;
-
-    }
-
-    let html = "";
-
-    snapshot.forEach(doc => {
-
-      const bet = doc.data();
-
-      html += `
-      <div class=\"bet-row\">
-        <strong>${bet.trackName}</strong>
-        Race ${bet.raceNumber}
-        <br>
-
-        Horse: ${bet.horseName}
-        <br>
-
-        Bet: $${bet.betAmount.toFixed(2)}
-        Odds: ${bet.odds}
-        <br>
-
-        Outcome: ${bet.outcome}
-        <br>
-
-        Winnings: $${bet.winnings.toFixed(2)}
-      </div>
-      <hr>
-      `;
-
-    });
-
-    historySection.innerHTML = html;
+    const bets = [];
+    snapshot.forEach((doc) => bets.push(doc.data()));
+    renderBetHistory(bets);
 
   } catch (error) {
 
@@ -603,6 +573,90 @@ async function loadBetHistory() {
 
   }
 
+}
+
+function getBetSortTime(bet) {
+  if (typeof bet.createdAtMs === "number" && Number.isFinite(bet.createdAtMs)) {
+    return bet.createdAtMs;
+  }
+
+  if (bet.timestamp && typeof bet.timestamp.toDate === "function") {
+    return bet.timestamp.toDate().getTime();
+  }
+
+  return 0;
+}
+
+function formatBetTime(bet) {
+  const ms = getBetSortTime(bet);
+  if (!ms) return "Time pending";
+  return new Date(ms).toLocaleString();
+}
+
+function renderBetHistory(bets) {
+  if (!bets || !bets.length) {
+    historySection.innerHTML = "No bets yet.";
+    return;
+  }
+
+  const sorted = [...bets]
+    .sort((a, b) => getBetSortTime(b) - getBetSortTime(a))
+    .slice(0, 10);
+
+  let html = "";
+  sorted.forEach((bet) => {
+    html += `
+      <div class=\"bet-row\">
+        <strong>${bet.trackName || "Unknown Track"}</strong>
+        Race ${bet.raceNumber || "—"}
+        <br>
+
+        Horse: ${bet.horseName || "—"}
+        <br>
+
+        Bet: $${Number(bet.betAmount || 0).toFixed(2)}
+        Odds: ${bet.odds || "—"}
+        <br>
+
+        Outcome: ${bet.outcome || "pending"}
+        <br>
+
+        Winnings: $${Number(bet.winnings || 0).toFixed(2)}
+        <br>
+
+        Time: ${formatBetTime(bet)}
+      </div>
+      <hr>
+    `;
+  });
+
+  historySection.innerHTML = html;
+}
+
+function startBetHistoryTracking(userId) {
+  if (!userId) return;
+
+  if (typeof unsubscribeHistory === "function") {
+    unsubscribeHistory();
+  }
+
+  historySection.innerHTML = "Tracking live bet history...";
+
+  unsubscribeHistory = db
+    .collection("bets")
+    .where("userId", "==", userId)
+    .limit(50)
+    .onSnapshot(
+      (snapshot) => {
+        const bets = [];
+        snapshot.forEach((doc) => bets.push(doc.data()));
+        renderBetHistory(bets);
+      },
+      (error) => {
+        console.error(error);
+        historySection.innerHTML = "Error tracking history. Tap Load Bet History to retry.";
+      }
+    );
 }
 
 /* ------------------------------------
