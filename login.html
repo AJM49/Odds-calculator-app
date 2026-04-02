@@ -19,6 +19,18 @@
 
     firebase.initializeApp(firebaseConfig);
 
+    // Check if user is logged in
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        document.getElementById("authSection").style.display = "none";
+        document.getElementById("logoutSection").style.display = "block";
+        document.getElementById("userEmail").textContent = user.email;
+      } else {
+        document.getElementById("authSection").style.display = "block";
+        document.getElementById("logoutSection").style.display = "none";
+      }
+    });
+
     async function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -32,12 +44,163 @@
         alert("Login failed: " + err.message);
       }
     }
+
+    async function signup() {
+      const email = document.getElementById("signupEmail").value;
+      const password = document.getElementById("signupPassword").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      if (password.length < 6) {
+        alert("Password must be at least 6 characters long!");
+        return;
+      }
+
+      try {
+        const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        console.log("✅ Account created:", result.user.email);
+        alert("Account created successfully! You can now log in.");
+        toggleSignup();
+        document.getElementById("email").value = email;
+      } catch (err) {
+        console.error("❌ Signup error:", err);
+        alert("Signup failed: " + err.message);
+      }
+    }
+
+    async function logout() {
+      try {
+        await firebase.auth().signOut();
+        console.log("✅ Logged out");
+        window.location.href = "login.html";
+      } catch (err) {
+        console.error("❌ Logout error:", err);
+        alert("Logout failed: " + err.message);
+      }
+    }
+
+    function toggleSignup() {
+      const loginForm = document.getElementById("loginForm");
+      const signupForm = document.getElementById("signupForm");
+      const toggleText = document.getElementById("toggleText");
+
+      if (loginForm.style.display === "none") {
+        loginForm.style.display = "block";
+        signupForm.style.display = "none";
+        toggleText.innerHTML = "Don't have an account? <a href='#' onclick='toggleSignup()'>Sign Up</a>";
+      } else {
+        loginForm.style.display = "none";
+        signupForm.style.display = "block";
+        toggleText.innerHTML = "Already have an account? <a href='#' onclick='toggleSignup()'>Log In</a>";
+      }
+    }
   </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .form-section {
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 8px;
+      display: none;
+    }
+    .form-section.active {
+      display: block;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .logout-btn {
+      background-color: #f44336;
+    }
+    .logout-btn:hover {
+      background-color: #da190b;
+    }
+    #toggleText {
+      text-align: center;
+      margin-top: 15px;
+    }
+    #toggleText a {
+      color: #4CAF50;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    #toggleText a:hover {
+      text-decoration: underline;
+    }
+    #logoutSection {
+      display: none;
+      text-align: center;
+    }
+    .user-info {
+      margin-bottom: 20px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
-  <h2>🐎 Horse Odds Calculator Login</h2>
-  <input type="email" id="email" placeholder="Email" /><br />
-  <input type="password" id="password" placeholder="Password" /><br />
-  <button onclick="login()">Log In</button>
+  <h2>🐎 Horse Odds Calculator</h2>
+  
+  <!-- Auth Section (Login/Signup) -->
+  <div id="authSection">
+    <!-- Login Form -->
+    <div id="loginForm" class="form-section active">
+      <h3>Login</h3>
+      <input type="email" id="email" placeholder="Email" /><br />
+      <input type="password" id="password" placeholder="Password" /><br />
+      <button onclick="login()">Log In</button>
+    </div>
+
+    <!-- Sign Up Form -->
+    <div id="signupForm" class="form-section">
+      <h3>Create Account</h3>
+      <input type="email" id="signupEmail" placeholder="Email" /><br />
+      <input type="password" id="signupPassword" placeholder="Password" /><br />
+      <input type="password" id="confirmPassword" placeholder="Confirm Password" /><br />
+      <button onclick="signup()">Sign Up</button>
+    </div>
+
+    <div id="toggleText">
+      Don't have an account? <a href="#" onclick="toggleSignup()">Sign Up</a>
+    </div>
+  </div>
+
+  <!-- Logout Section -->
+  <div id="logoutSection">
+    <div class="user-info">
+      <p>Logged in as: <strong id="userEmail"></strong></p>
+    </div>
+    <button onclick="window.location.href='index.html'" style="background-color: #2196F3;">Go to Calculator</button>
+    <button onclick="logout()" class="logout-btn">Log Out</button>
+  </div>
 </body>
 </html>
