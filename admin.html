@@ -105,11 +105,11 @@
 
     async function loadDashboardSummary() {
       try {
-        const userCount = await db.collection('users').where('role', '!=', 'admin').count().get();
-        const betCount = await db.collection('bets').count().get();
+        const userCount = await db.collection('users').where('role', '!=', 'admin').get();
+        const betCount = await db.collection('bets').get();
 
-        document.getElementById('totalUsers').textContent = userCount.data().count;
-        document.getElementById('totalBets').textContent = betCount.data().count;
+        document.getElementById('totalUsers').textContent = userCount.size;
+        document.getElementById('totalBets').textContent = betCount.size;
 
         const betSnapshot = await db.collection('bets').select('betAmount', 'amount').limit(500).get();
         let totalWagered = 0;
