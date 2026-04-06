@@ -57,7 +57,9 @@ auth.onAuthStateChanged(user => {
     return;
   }
 
-  userInfo.innerText = "Logged in: " + user.email;
+  if (userInfo) {
+    userInfo.innerText = "Logged in: " + user.email;
+  }
 
   loadBetHistory();
 
@@ -122,7 +124,7 @@ function calculateOdds(betAmount, oddsStr) {
 
   // Decimal odds: e.g., "3.5" (total return including stake)
   const maybeDecimal = parseFloat(odds);
-  if (!isNaN(maybeDecimal) && maybeDecimal > 0) {
+  if (!isNaN(maybeDecimal) && maybeDecimal >= 1) {
     return betAmount * maybeDecimal;
   }
 
@@ -261,6 +263,8 @@ async function loadBetHistory() {
     return;
   }
 
+  if (!historySection) return;
+
   historySection.innerHTML = "Loading...";
 
   try {
@@ -295,14 +299,14 @@ async function loadBetHistory() {
         Horse: ${bet.horseName}
         <br>
 
-        Bet: $${bet.betAmount.toFixed(2)}
+        Bet: $${Number(bet.betAmount ?? bet.amount ?? 0).toFixed(2)}
         Odds: ${bet.odds}
         <br>
 
-        Outcome: ${bet.outcome}
+        Outcome: ${bet.outcome ?? bet.result ?? "pending"}
         <br>
 
-        Winnings: $${bet.winnings.toFixed(2)}
+        Winnings: $${Number(bet.winnings ?? 0).toFixed(2)}
       </div>
       <hr>
       `;
