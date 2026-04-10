@@ -1,7 +1,7 @@
-import { auth, db } from './firebase.js';
+import { auth, db, onAuthStateChanged } from './firebase.js';
 
 // Check if user is admin
-auth.onAuthStateChanged(async (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "login.html";
     return;
