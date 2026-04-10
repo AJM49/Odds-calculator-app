@@ -45,27 +45,12 @@
   </table>
 
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js"></script>
-
-  <!-- Firebase Config -->
-  <script>
- const firebaseConfig = {
-  apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
-  authDomain: "horse-bet-calculator.firebaseapp.com",
-  projectId: "horse-bet-calculator",
-  storageBucket: "horse-bet-calculator.firebasestorage.app",
-  messagingSenderId: "258212871291",
-  appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
-};
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-  </script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 
   <!-- Dashboard Logic -->
-  <script src="dashboard.js"></script>
+  <script type="module" src="dashboard.js"></script>
 
 </body>
 </html>

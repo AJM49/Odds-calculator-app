@@ -3,23 +3,7 @@
  Frontend Input + Firestore Database Storage
  ****************************************************/
 
-/* ------------------------------------
-1. Firebase Configuration
------------------------------------- */
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_DOMAIN.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.firestore();
+import { auth, db } from './firebase.js';
 
 /* ------------------------------------
 2. DOM Elements
@@ -34,6 +18,8 @@ const horseInput = document.getElementById("horseName");
 const raceInput = document.getElementById("raceNumber");
 
 const betMode = document.getElementById("betMode");
+const dynamicFields = document.getElementById("dynamicFields");
+const oddsGroup = document.getElementById("oddsGroup");
 const betAmountInput = document.getElementById("betAmount");
 const oddsInput = document.getElementById("oddsInput");
 
@@ -48,7 +34,132 @@ const logoutBtn = document.getElementById("logoutBtn");
 let calculatedPayout = 0;
 
 /* ------------------------------------
-3. Auth State
+3. Update Form Fields
+------------------------------------ */
+
+function updateFormFields() {
+  const mode = betMode.value;
+  dynamicFields.innerHTML = '';
+
+  // Common fields
+  const trackGroup = document.createElement('div');
+  trackGroup.className = 'form-group';
+  trackGroup.innerHTML = `
+    <label for="trackName">Track Name:</label>
+    <input type="text" id="trackName" placeholder="Track Name" />
+  `;
+  dynamicFields.appendChild(trackGroup);
+
+  const raceGroup = document.createElement('div');
+  raceGroup.className = 'form-group';
+  raceGroup.innerHTML = `
+    <label for="raceNumber">Race Number:</label>
+    <input type="number" id="raceNumber" placeholder="Race Number" min="1" />
+  `;
+  dynamicFields.appendChild(raceGroup);
+
+  if (mode === 'win' || mode === 'place' || mode === 'show') {
+    const horseGroup = document.createElement('div');
+    horseGroup.className = 'form-group';
+    horseGroup.innerHTML = `
+      <label for="horseName">Horse Name:</label>
+      <input type="text" id="horseName" placeholder="Horse Name" />
+    `;
+    dynamicFields.appendChild(horseGroup);
+  } else if (mode === 'exacta' || mode === 'exacta_box') {
+    const horse1Group = document.createElement('div');
+    horse1Group.className = 'form-group';
+    horse1Group.innerHTML = `
+      <label for="horse1">Horse 1 (Win):</label>
+      <input type="text" id="horse1" placeholder="Horse 1" />
+    `;
+    dynamicFields.appendChild(horse1Group);
+
+    const horse2Group = document.createElement('div');
+    horse2Group.className = 'form-group';
+    horse2Group.innerHTML = `
+      <label for="horse2">Horse 2 (Place):</label>
+      <input type="text" id="horse2" placeholder="Horse 2" />
+    `;
+    dynamicFields.appendChild(horse2Group);
+  } else if (mode === 'trifecta' || mode === 'trifecta_key') {
+    const horse1Group = document.createElement('div');
+    horse1Group.className = 'form-group';
+    horse1Group.innerHTML = `
+      <label for="horse1">Horse 1 (1st):</label>
+      <input type="text" id="horse1" placeholder="Horse 1" />
+    `;
+    dynamicFields.appendChild(horse1Group);
+
+    const horse2Group = document.createElement('div');
+    horse2Group.className = 'form-group';
+    horse2Group.innerHTML = `
+      <label for="horse2">Horse 2 (2nd):</label>
+      <input type="text" id="horse2" placeholder="Horse 2" />
+    `;
+    dynamicFields.appendChild(horse2Group);
+
+    const horse3Group = document.createElement('div');
+    horse3Group.className = 'form-group';
+    horse3Group.innerHTML = `
+      <label for="horse3">Horse 3 (3rd):</label>
+      <input type="text" id="horse3" placeholder="Horse 3" />
+    `;
+    dynamicFields.appendChild(horse3Group);
+  } else if (mode === 'superfecta') {
+    const horse1Group = document.createElement('div');
+    horse1Group.className = 'form-group';
+    horse1Group.innerHTML = `
+      <label for="horse1">Horse 1 (1st):</label>
+      <input type="text" id="horse1" placeholder="Horse 1" />
+    `;
+    dynamicFields.appendChild(horse1Group);
+
+    const horse2Group = document.createElement('div');
+    horse2Group.className = 'form-group';
+    horse2Group.innerHTML = `
+      <label for="horse2">Horse 2 (2nd):</label>
+      <input type="text" id="horse2" placeholder="Horse 2" />
+    `;
+    dynamicFields.appendChild(horse2Group);
+
+    const horse3Group = document.createElement('div');
+    horse3Group.className = 'form-group';
+    horse3Group.innerHTML = `
+      <label for="horse3">Horse 3 (3rd):</label>
+      <input type="text" id="horse3" placeholder="Horse 3" />
+    `;
+    dynamicFields.appendChild(horse3Group);
+
+    const horse4Group = document.createElement('div');
+    horse4Group.className = 'form-group';
+    horse4Group.innerHTML = `
+      <label for="horse4">Horse 4 (4th):</label>
+      <input type="text" id="horse4" placeholder="Horse 4" />
+    `;
+    dynamicFields.appendChild(horse4Group);
+  } else if (mode.startsWith('pick')) {
+    const num = parseInt(mode.slice(4));
+    for (let i = 1; i <= num; i++) {
+      const raceGroup = document.createElement('div');
+      raceGroup.className = 'form-group';
+      raceGroup.innerHTML = `
+        <label for="pick${i}">Race ${i} Horse:</label>
+        <input type="text" id="pick${i}" placeholder="Horse for Race ${i}" />
+      `;
+      dynamicFields.appendChild(raceGroup);
+    }
+  }
+
+  // Odds group is always there
+}
+
+// Initialize
+updateFormFields();
+betMode.addEventListener('change', updateFormFields);
+
+/* ------------------------------------
+4. Auth State
 ------------------------------------ */
 auth.onAuthStateChanged(user => {
 
@@ -181,13 +292,40 @@ if (submitBetBtn) {
       return;
     }
 
-    const trackName = trackInput.value.trim();
-    const horseName = horseInput.value.trim();
-    const raceNumber = parseInt(raceInput.value, 10);
+    const trackName = document.getElementById("trackName")?.value.trim() || '';
+    const raceNumber = parseInt(document.getElementById("raceNumber")?.value, 10) || 0;
 
     const betType = betMode.value;
     const betAmount = parseFloat(betAmountInput.value);
     const odds = oddsInput.value.trim();
+
+    let horseName = '';
+    if (betType === 'win' || betType === 'place' || betType === 'show') {
+      horseName = document.getElementById("horseName")?.value.trim() || '';
+    } else if (betType === 'exacta' || betType === 'exacta_box') {
+      const h1 = document.getElementById("horse1")?.value.trim() || '';
+      const h2 = document.getElementById("horse2")?.value.trim() || '';
+      horseName = `${h1}-${h2}`;
+    } else if (betType === 'trifecta' || betType === 'trifecta_key') {
+      const h1 = document.getElementById("horse1")?.value.trim() || '';
+      const h2 = document.getElementById("horse2")?.value.trim() || '';
+      const h3 = document.getElementById("horse3")?.value.trim() || '';
+      horseName = `${h1}-${h2}-${h3}`;
+    } else if (betType === 'superfecta') {
+      const h1 = document.getElementById("horse1")?.value.trim() || '';
+      const h2 = document.getElementById("horse2")?.value.trim() || '';
+      const h3 = document.getElementById("horse3")?.value.trim() || '';
+      const h4 = document.getElementById("horse4")?.value.trim() || '';
+      horseName = `${h1}-${h2}-${h3}-${h4}`;
+    } else if (betType.startsWith('pick')) {
+      const num = parseInt(betType.slice(4));
+      const horses = [];
+      for (let i = 1; i <= num; i++) {
+        const h = document.getElementById(`pick${i}`)?.value.trim() || '';
+        horses.push(h);
+      }
+      horseName = horses.join('-');
+    }
 
     const winner = isWinnerCheckbox.checked;
 
@@ -286,13 +424,21 @@ async function loadBetHistory() {
 
       const bet = doc.data();
 
+      let horseDisplay = bet.horseName;
+      if (bet.betType !== 'win' && bet.betType !== 'place' && bet.betType !== 'show') {
+        horseDisplay = bet.horseName.split('-').join(' → ');
+      }
+
       html += `
       <div class=\"bet-row\">
         <strong>${bet.trackName}</strong>
         Race ${bet.raceNumber}
         <br>
 
-        Horse: ${bet.horseName}
+        Bet: ${bet.betType}
+        <br>
+
+        Horse(s): ${horseDisplay}
         <br>
 
         Bet: $${bet.betAmount.toFixed(2)}
@@ -329,8 +475,35 @@ if (shareBtn) {
 
   shareBtn.addEventListener("click", () => {
 
-    const track = trackInput.value;
-    const horse = horseInput.value;
+    const track = document.getElementById("trackName")?.value || '';
+    const betType = betMode.value;
+    let horse = '';
+    if (betType === 'win' || betType === 'place' || betType === 'show') {
+      horse = document.getElementById("horseName")?.value || '';
+    } else if (betType === 'exacta' || betType === 'exacta_box') {
+      const h1 = document.getElementById("horse1")?.value || '';
+      const h2 = document.getElementById("horse2")?.value || '';
+      horse = `${h1}-${h2}`;
+    } else if (betType === 'trifecta' || betType === 'trifecta_key') {
+      const h1 = document.getElementById("horse1")?.value || '';
+      const h2 = document.getElementById("horse2")?.value || '';
+      const h3 = document.getElementById("horse3")?.value || '';
+      horse = `${h1}-${h2}-${h3}`;
+    } else if (betType === 'superfecta') {
+      const h1 = document.getElementById("horse1")?.value || '';
+      const h2 = document.getElementById("horse2")?.value || '';
+      const h3 = document.getElementById("horse3")?.value || '';
+      const h4 = document.getElementById("horse4")?.value || '';
+      horse = `${h1}-${h2}-${h3}-${h4}`;
+    } else if (betType.startsWith('pick')) {
+      const num = parseInt(betType.slice(4));
+      const horses = [];
+      for (let i = 1; i <= num; i++) {
+        const h = document.getElementById(`pick${i}`)?.value || '';
+        horses.push(h);
+      }
+      horse = horses.join('-');
+    }
     const odds = oddsInput.value;
 
     const text =

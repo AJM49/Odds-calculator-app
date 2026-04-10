@@ -48,7 +48,7 @@
           <th>Bet Type</th>
           <th>Amount</th>
           <th>Odds</th>
-          <th>Timestamp</th>
+          <th>Result</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -56,82 +56,10 @@
     </table>
   </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDl7TW4J_yz8c-fJtE_trmcFRw1W0fcApA",
-      authDomain: "horse-bet-calculator.firebaseapp.com",
-      projectId: "horse-bet-calculator",
-      appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        document.getElementById('adminStatus').innerText = 'Not signed in.';
-        return;
-      }
-      const doc = await db.collection('users').doc(user.uid).get();
-      const data = doc.data();
-      if (data && data.role === 'admin') {
-        document.getElementById('adminStatus').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-        loadUsers();
-        loadBets();
-      } else {
-        document.getElementById('adminStatus').innerText = 'Access denied. Not an admin.';
-      }
-    });
-
-    async function loadUsers() {
-      const snapshot = await db.collection('users').get();
-      const tbody = document.getElementById('usersTable').querySelector('tbody');
-      tbody.innerHTML = '';
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${data.email}</td>
-          <td>${data.role || 'user'}</td>
-          <td><button onclick="deleteUser('${doc.id}')">Delete</button></td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    async function loadBets() {
-      const snapshot = await db.collection('bets').get();
-      const tbody = document.getElementById('betsTable').querySelector('tbody');
-      tbody.innerHTML = '';
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${data.userId}</td>
-          <td>${data.betType}</td>
-          <td>$${parseFloat(data.amount).toFixed(2)}</td>
-          <td>${data.odds}</td>
-          <td>${new Date(data.timestamp?.toDate()).toLocaleString()}</td>
-          <td><button onclick="deleteBet('${doc.id}')">Delete</button></td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    async function deleteUser(uid) {
-      if (confirm("Are you sure you want to delete this user from Firestore?")) {
-        await db.collection('users').doc(uid).delete();
-        loadUsers();
-      }
-    }
-
-    async function deleteBet(betId) {
-      if (confirm("Are you sure you want to delete this bet?")) {
-        await db.collection('bets').doc(betId).delete();
-        loadBets();
-      }
-    }
-  </script>
+  <script type="module" src="admin.js"></script>
 </body>
 </html>

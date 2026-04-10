@@ -1,12 +1,5 @@
 // Firebase imports
-import { 
-  getFirestore, collection, query, where, orderBy, onSnapshot 
-} from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-
-// Initialize Firebase
-const db = getFirestore();
-const auth = getAuth();
+import { db, auth } from './firebase.js';
 
 // Wait for user authentication before loading bets
 onAuthStateChanged(auth, user => {

@@ -15,13 +15,15 @@ A lightweight web application for calculating horse racing bet payouts, managing
 
 ## 📁 Project structure
 
-- `index.html` — Main calculator UI
-- `app.js` — Core bet and payout logic
-- `dashboard.html` / `dashboard.js` — User/admin dashboard behavior
-- `login.html`, `signup.html` — Authentication views
-- `admin.html` / `admin.js` — Admin-specific tools
+- `index.html` — Main calculator UI with dynamic form for all bet types
+- `app.js` — Core bet and payout logic, Firebase integration
+- `firebase.js` — Firebase configuration and initialization
+- `dashboard.html` / `dashboard.js` — User dashboard for bet history
+- `login.html` / `login.js` — Authentication views
+- `signup` / `signup.js` — Sign up page
+- `admin.html` / `admin.js` — Admin dashboard for user and bet management
 - `service-worker.js`, `manifest.json` — PWA support
-- `style.css`, `dashboard.css`, `src/css/style.css` — Styling
+- `style.css`, `dashboard.css` — Styling
 
 ## 🚀 Getting started
 
