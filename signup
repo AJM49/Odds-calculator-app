@@ -12,9 +12,21 @@
 </head>
 <body>
   <h2>🐎 Horse Odds Calculator - Sign Up</h2>
-  <input type="email" id="email" placeholder="Email" /><br />
-  <input type="password" id="password" placeholder="Password" /><br />
-  <button onclick="signUp()">Sign Up</button><br />
-  <a href="login.html">Already have an account? Log in</a>
+  <form id="signupForm">
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input type="email" id="email" placeholder="Enter your email" required />
+    </div>
+    <div class="form-group">
+      <label for="password">Password:</label>
+      <input type="password" id="password" placeholder="Enter password (min 6 chars)" required />
+    </div>
+    <div class="form-group">
+      <label for="confirmPassword">Confirm Password:</label>
+      <input type="password" id="confirmPassword" placeholder="Confirm password" required />
+    </div>
+    <button type="button" onclick="signUp()">Sign Up</button>
+  </form>
+  <p><a href="login.html">Already have an account? Log in</a></p>
 </body>
 </html>

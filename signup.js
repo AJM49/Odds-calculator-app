@@ -1,8 +1,24 @@
 import { auth } from './firebase.js';
 
 async function signUp() {
-  const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+
+  if (!email) {
+    alert("Please enter an email address.");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match!");
+    return;
+  }
+
+  if (password.length < 6) {
+    alert("Password must be at least 6 characters long!");
+    return;
+  }
 
   try {
     const result = await auth.createUserWithEmailAndPassword(email, password);
