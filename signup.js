@@ -1,4 +1,4 @@
-import { auth } from './firebase.js';
+import { auth, createUserWithEmailAndPassword } from './firebase.js';
 
 async function signUp() {
   const email = document.getElementById("email").value.trim();
@@ -21,7 +21,7 @@ async function signUp() {
   }
 
   try {
-    const result = await auth.createUserWithEmailAndPassword(email, password);
+    const result = await createUserWithEmailAndPassword(auth, email, password);
     console.log("✅ Sign up successful:", result.user.email);
     alert("Account created! Please log in.");
     window.location.href = "login.html";
