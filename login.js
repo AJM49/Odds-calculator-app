@@ -1,7 +1,7 @@
-import { auth } from './firebase.js';
+import { auth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from './firebase.js';
 
 // Check if user is logged in
-auth.onAuthStateChanged((user) => {
+onAuthStateChanged(auth, (user) => {
   if (user) {
     document.getElementById("authSection").style.display = "none";
     document.getElementById("logoutSection").style.display = "block";
@@ -17,7 +17,7 @@ async function login() {
   const password = document.getElementById("password").value;
 
   try {
-    const result = await auth.signInWithEmailAndPassword(email, password);
+    const result = await signInWithEmailAndPassword(auth, email, password);
     console.log("✅ Logged in as:", result.user.email);
     window.location.href = "index.html";
   } catch (err) {
@@ -42,7 +42,7 @@ async function signup() {
   }
 
   try {
-    const result = await auth.createUserWithEmailAndPassword(email, password);
+    const result = await createUserWithEmailAndPassword(auth, email, password);
     console.log("✅ Account created:", result.user.email);
     alert("Account created successfully! You can now log in.");
     toggleSignup();
@@ -55,11 +55,12 @@ async function signup() {
 
 async function logout() {
   try {
-    await auth.signOut();
+    await signOut(auth);
     console.log("✅ Logged out");
     window.location.href = "login.html";
   } catch (err) {
     console.error("❌ Logout error:", err);
+    alert("Logout failed: " + err.message);
   }
 }
 
