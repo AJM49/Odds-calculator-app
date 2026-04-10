@@ -111,7 +111,7 @@
         document.getElementById('totalUsers').textContent = userCount.size;
         document.getElementById('totalBets').textContent = betCount.size;
 
-        const betSnapshot = await db.collection('bets').select('betAmount', 'amount').limit(500).get();
+        const betSnapshot = await db.collection('bets').get();
         let totalWagered = 0;
         betSnapshot.forEach((doc) => {
           const data = doc.data();
