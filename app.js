@@ -3,7 +3,7 @@
  Frontend Input + Firestore Database Storage
  ****************************************************/
 
-import { auth, db } from './firebase.js';
+import { auth, db, onAuthStateChanged, signOut } from './firebase.js';
 
 /* ------------------------------------
 2. DOM Elements
@@ -161,7 +161,7 @@ betMode.addEventListener('change', updateFormFields);
 /* ------------------------------------
 4. Auth State
 ------------------------------------ */
-auth.onAuthStateChanged(user => {
+onAuthStateChanged(auth, user => {
 
   if (!user) {
     window.location.href = "login.html";
@@ -184,7 +184,7 @@ if (logoutBtn) {
 
   logoutBtn.addEventListener("click", () => {
 
-    auth.signOut().then(() => {
+    signOut(auth).then(() => {
       window.location.href = "login.html";
     });
 
