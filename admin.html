@@ -25,7 +25,9 @@
   </div>
   <div class="card">
     <h3>Total Wagered</h3>
-    <p id>
+    <p id="totalWagered">$0.00</p>
+  </div>
+</section>
 
 
     <h2>👤 Users</h2>
@@ -77,6 +79,7 @@
       if (data && data.role === 'admin') {
         document.getElementById('adminStatus').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
+        await loadDashboardSummary();
         loadUsers();
         loadBets();
       } else {
@@ -85,7 +88,7 @@
     });
 
     async function loadUsers() {
-      const snapshot = await db.collection('users').get();
+      const snapshot = await db.collection('users').orderBy('email').limit(200).get();
       const tbody = document.getElementById('usersTable').querySelector('tbody');
       tbody.innerHTML = '';
       snapshot.forEach(doc => {
@@ -100,8 +103,28 @@
       });
     }
 
+    async function loadDashboardSummary() {
+      try {
+        const userCount = await db.collection('users').where('role', '!=', 'admin').get();
+        const betCount = await db.collection('bets').get();
+
+        document.getElementById('totalUsers').textContent = userCount.size;
+        document.getElementById('totalBets').textContent = betCount.size;
+
+        const betSnapshot = await db.collection('bets').get();
+        let totalWagered = 0;
+        betSnapshot.forEach((doc) => {
+          const data = doc.data();
+          totalWagered += Number(data.betAmount ?? data.amount ?? 0);
+        });
+        document.getElementById('totalWagered').textContent = `$${totalWagered.toFixed(2)}`;
+      } catch (error) {
+        console.error('Dashboard summary failed:', error);
+      }
+    }
+
     async function loadBets() {
-      const snapshot = await db.collection('bets').get();
+      const snapshot = await db.collection('bets').orderBy('timestamp', 'desc').limit(300).get();
       const tbody = document.getElementById('betsTable').querySelector('tbody');
       tbody.innerHTML = '';
       snapshot.forEach(doc => {
@@ -110,9 +133,9 @@
         row.innerHTML = `
           <td>${data.userId}</td>
           <td>${data.betType}</td>
-          <td>$${parseFloat(data.amount).toFixed(2)}</td>
+          <td>$${Number(data.betAmount ?? data.amount ?? 0).toFixed(2)}</td>
           <td>${data.odds}</td>
-          <td>${new Date(data.timestamp?.toDate()).toLocaleString()}</td>
+          <td>${data.timestamp?.toDate ? new Date(data.timestamp.toDate()).toLocaleString() : '—'}</td>
           <td><button onclick="deleteBet('${doc.id}')">Delete</button></td>
         `;
         tbody.appendChild(row);
