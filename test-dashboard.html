@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Test</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <div class="header-top">
+      <h1>My Betting Dashboard</h1>
+      <div class="header-buttons">
+        <button id="refreshBtn" class="refresh-btn" title="Refresh bets">↻ Refresh</button>
+        <button id="logoutBtn" class="logout-btn">Sign Out</button>
+      </div>
+    </div>
+    <p id="dashboardStatus">Test Dashboard - No Firebase</p>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="stats-container">
+    <div class="stat-card">
+      <h2>Total Bets</h2>
+      <p id="totalBets">0</p>
+    </div>
+    <div class="stat-card">
+      <h2>Total Winnings</h2>
+      <p id="totalWinnings">$0.00</p>
+    </div>
+    <div class="stat-card">
+      <h2>Win Rate</h2>
+      <p id="winRate">0%</p>
+    </div>
+  </div>
+
+  <!-- Bet History Table -->
+  <table>
+  <thead>
+    <tr>
+      <th>Horse Name</th>
+      <th>Track Name</th>
+      <th>Bet Type</th>
+      <th>Amount</th>
+      <th>Result</th>
+      <th>Winnings</th>
+    </tr>
+  </thead>
+  <tbody id="betsTableBody"></tbody>
+  </table>
+
+  <script>
+    // Test the table population logic
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function getOutcomeClass(outcome) {
+      const normalized = outcome.toLowerCase();
+      if (normalized === 'win') return 'result-win';
+      if (normalized === 'loss') return 'result-loss';
+      if (normalized === 'pending') return 'result-pending';
+      return '';
+    }
+
+    function renderBetsTable(bets) {
+      const tableBody = document.getElementById("betsTableBody");
+      if (!tableBody) {
+        console.error('Table body not found!');
+        return;
+      }
+
+      tableBody.innerHTML = "";
+
+      if (bets.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No bets recorded yet.</td></tr>';
+        return;
+      }
+
+      bets.forEach((bet, idx) => {
+        const tr = document.createElement("tr");
+        const outcomeClass = getOutcomeClass(bet.outcome);
+
+        // Create cells with text content to prevent XSS
+        const cells = [
+          escapeHtml(bet.horseName),
+          escapeHtml(bet.trackName),
+          escapeHtml(bet.betType),
+          `$${bet.amount.toFixed(2)}`,
+          escapeHtml(bet.outcome),
+          `$${bet.winnings.toFixed(2)}`
+        ];
+
+        tr.innerHTML = cells.map((cell, cidx) => {
+          return cidx === 4 ? `<td class="${outcomeClass}">${cell}</td>` : `<td>${cell}</td>`;
+        }).join('');
+
+        console.log(`Row ${idx}:`, tr.innerHTML);
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function updateStats(bets) {
+      const totalBetsEl = document.getElementById('totalBets');
+      const totalWinningsEl = document.getElementById('totalWinnings');
+      const winRateEl = document.getElementById('winRate');
+
+      const totalBets = bets.length;
+      const totalWinnings = bets.reduce((sum, bet) => sum + (bet.winnings || 0), 0);
+      const winCount = bets.filter(bet => bet.outcome.toLowerCase() === 'win').length;
+      const winRate = totalBets > 0 ? ((winCount / totalBets) * 100).toFixed(1) : 0;
+
+      if (totalBetsEl) totalBetsEl.textContent = totalBets;
+      if (totalWinningsEl) totalWinningsEl.textContent = `$${totalWinnings.toFixed(2)}`;
+      if (winRateEl) winRateEl.textContent = `${winRate}%`;
+    }
+
+    // Test with sample data
+    const testBets = [
+      {
+        horseName: 'Thunder Storm',
+        trackName: 'Belmont Park',
+        betType: 'Win',
+        amount: 100,
+        outcome: 'win',
+        winnings: 250
+      },
+      {
+        horseName: 'Quick Gold',
+        trackName: 'Churchill Downs',
+        betType: 'Place',
+        amount: 50,
+        outcome: 'loss',
+        winnings: 0
+      },
+      {
+        horseName: 'Marathon Runner',
+        trackName: 'Pimlico',
+        betType: 'Show',
+        amount: 25,
+        outcome: 'pending',
+        winnings: 0
+      }
+    ];
+
+    // Render the test data
+    console.log('Rendering test bets...');
+    renderBetsTable(testBets);
+    updateStats(testBets);
+    console.log('✓ Test complete');
+  </script>
+</body>
+</html>

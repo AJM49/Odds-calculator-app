@@ -10,7 +10,13 @@
 
   <!-- Dashboard Header -->
   <div class="dashboard-header">
-    <h1>My Betting Dashboard</h1>
+    <div class="header-top">
+      <h1>My Betting Dashboard</h1>
+      <div class="header-buttons">
+        <button id="refreshBtn" class="refresh-btn" title="Refresh bets">↻ Refresh</button>
+        <button id="logoutBtn" class="logout-btn">Sign Out</button>
+      </div>
+    </div>
     <p id="dashboardStatus">Checking sign-in…</p>
   </div>
 
@@ -45,12 +51,7 @@
   <tbody id="betsTableBody"></tbody>
   </table>
 
-  <!-- Firebase -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
-
-  <!-- Dashboard Logic -->
+  <!-- Dashboard Logic (Firebase is imported as a module within dashboard.js) -->
   <script type="module" src="dashboard.js"></script>
 
 </body>
