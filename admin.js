@@ -205,25 +205,24 @@ onAuthStateChanged(auth, async (user) => {
   // Load data
   try {
     console.log('📊 Loading dashboard data...');
-    loadUsers();
-    loadBets();
-    loadDashboardSummary();
-    loadAuditLogs();
+    await loadUsers();
+    await loadBets();
+    await loadDashboardSummary();
+    await loadAuditLogs();
+    console.log('✅ All dashboard data loaded successfully');
   } catch (error) {
     console.error('Error loading data:', error);
     showToast('Failed to load dashboard data', 'error');
   }
-
-  loadUsers();
-  loadBets();
-  loadDashboardSummary();
-  loadAuditLogs();
 });
 
 async function loadDashboardSummary() {
   try {
+    console.log('📊 Computing dashboard summary...');
     // Get all users
     const usersSnapshot = await getDocs(collection(db, 'users'));
+    console.log(`User count from Firestore: ${usersSnapshot.docs.length}`);
+    
     let userCount = 0;
     usersSnapshot.forEach(doc => {
       if (doc.data().role !== 'admin') {
@@ -233,6 +232,8 @@ async function loadDashboardSummary() {
 
     // Get all bets
     const betsSnapshot = await getDocs(collection(db, 'bets'));
+    console.log(`Bet count from Firestore: ${betsSnapshot.docs.length}`);
+    
     let betCount = 0;
     let totalWagered = 0;
     const outcomes = { win: 0, loss: 0, pending: 0 };
@@ -262,29 +263,48 @@ async function loadDashboardSummary() {
 
     console.log(`Dashboard Summary: ${userCount} users, ${betCount} bets, $${totalWagered.toFixed(2)} wagered`);
   } catch (error) {
-    console.error('Failed to load dashboard summary:', error);
+    console.error('❌ Failed to load dashboard summary:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    showToast('✗ Failed to load summary: ' + error.message, 'error');
   }
 }
 
 async function loadUsers() {
   const usersTableBody = document.querySelector('#usersTable tbody');
+  
+  console.log('🔍 DEBUG: Starting loadUsers()');
+  console.log('usersTableBody element:', usersTableBody);
+  
+  if (!usersTableBody) {
+    console.error('❌ ERROR: #usersTable tbody not found in DOM');
+    return;
+  }
+  
   usersTableBody.innerHTML = '';
 
   try {
+    console.log('📋 Querying users collection...');
     const snapshot = await getDocs(collection(db, 'users'));
     
+    console.log(`✓ Got ${snapshot.docs.length} user documents`);
+    
     if (snapshot.empty) {
+      console.log('⚠️ No users found in Firestore');
       showEmptyState('usersTable', 'No users found');
-      console.log('No users found');
       return;
     }
     
     let userStats = {};
     const betsSnapshot = await getDocs(collection(db, 'bets'));
     
+    console.log(`📊 Got ${betsSnapshot.docs.length} bet documents`);
+    
     // Calculate stats per user
     betsSnapshot.forEach(doc => {
       const bet = doc.data();
+      console.log('Bet userId:', bet.userId, '| Bet type:', bet.betType);
+      
       if (!userStats[bet.userId]) {
         userStats[bet.userId] = { totalBets: 0, totalWagered: 0, wins: 0, losses: 0 };
       }
@@ -295,9 +315,13 @@ async function loadUsers() {
       if (outcome === 'win') userStats[bet.userId].wins++;
       else if (outcome === 'loss') userStats[bet.userId].losses++;
     });
+    
+    console.log('User stats built:', Object.keys(userStats).length, 'unique users with bets');
 
     snapshot.forEach(doc => {
       const user = doc.data();
+      console.log('User doc id:', doc.id, '| User data:', user);
+      
       const stats = userStats[doc.id] || { totalBets: 0, totalWagered: 0, wins: 0, losses: 0 };
       const winRate = stats.totalBets > 0 ? (stats.wins / stats.totalBets * 100).toFixed(1) : 0;
       
@@ -319,7 +343,10 @@ async function loadUsers() {
 
     console.log('✓ Users loaded');
   } catch (error) {
-    console.error('Error loading users:', error);
+    console.error('❌ ERROR loading users:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    showToast('✗ Failed to load users: ' + error.message, 'error');
   }
 }
 
@@ -365,7 +392,10 @@ async function loadBets() {
 
     console.log('✓ Bets loaded');
   } catch (error) {
-    console.error('Error loading bets:', error);
+    console.error('❌ ERROR loading bets:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    showToast('✗ Failed to load bets: ' + error.message, 'error');
   }
 }
 
@@ -651,7 +681,8 @@ async function loadAnalytics() {
     analyticsEl.innerHTML = analyticsHtml;
     console.log('✓ Analytics loaded');
     showToast('✓ Analytics refreshed', 'success');
-  } catch (error) {\n    console.error('Error loading analytics:', error);
+  } catch (error) {
+    console.error('Error loading analytics:', error);
     showToast('✗ Failed to load analytics', 'error');
   }
 }
