@@ -5,60 +5,464 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Dashboard - Horse Odds Calculator</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .admin-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .stat-card p {
+      margin: 0;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .stat-card small {
+      display: block;
+      margin-top: 8px;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    
+    section {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    section h2 {
+      margin-top: 0;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      color: #333;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .action-buttons button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+    
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+    
+    .btn-success {
+      background: #27ae60;
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background: #229954;
+    }
+    
+    .btn-info {
+      background: #3498db;
+      color: white;
+    }
+    
+    .btn-info:hover {
+      background: #2980b9;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    table th {
+      background: #f5f5f5;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #ddd;
+      color: #333;
+    }
+    
+    table td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    table tr:hover {
+      background: #f9f9f9;
+    }
+    
+    table button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin: 0 4px;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    #analyticsSection {
+      margin-top: 20px;
+    }
+
+    .header-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .header-wrapper > div {
+      flex: 1;
+      min-width: 200px;
+    }
+    #adminStatus {
+      font-size: 16px;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0 0 0;
+      display: block;
+    }
+    #adminStatus code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    /* Toast notifications */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      z-index: 1000;
+      display: none;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    #toast.success {
+      background: #4caf50;
+    }
+
+    #toast.error {
+      background: #f44336;
+    }
+
+    #toast.info {
+      background: #2196f3;
+    }
+
+    /* Confirmation Dialog */
+    #confirmDialog {
+      position: fixed;
+      background: rgba(0,0,0,0.5);
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .confirm-box {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .confirm-box h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+
+    .confirm-box p {
+      margin: 0 0 25px 0;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .confirm-buttons button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* Search input */
+    .search-box {
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .pagination button.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
-  <h1>🐎 Admin Dashboard</h1>
-  <div id="adminStatus">Checking admin access...</div>
-  <div id="adminContent" style="display:none;">
+  <div class="admin-container">
+    <div class="header-wrapper">
+      <div>
+        <h1>🐎 Admin Dashboard</h1>
+        <p id="adminStatus">Checking admin access...</p>
+      </div>
+      <button onclick="window.location.href='index.html'" class="btn-info">← Back to Calculator</button>
+    </div>
 
-    <section id="dashboardCards" style="display: flex; gap: 20px; flex-wrap: wrap;">
-  <div class="card">
-    <h3>Total Users</h3>
-    <p id="totalUsers">0</p>
-  </div>
-  <div class="card">
-    <h3>Total Bets</h3>
-    <p id="totalBets">0</p>
-  </div>
-  <div class="card">
-    <h3>Total Wagered</h3>
-    <p id="totalWagered">$0.00</p>
-  </div>
-</section>
+    <div id="adminContent" style="display:none;">
+      
+      <!-- Dashboard Summary Cards -->
+      <div class="dashboard-grid">
+        <div class="stat-card">
+          <h3>Total Users</h3>
+          <p id="totalUsers">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Total Bets</h3>
+          <p id="totalBets">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Total Wagered</h3>
+          <p id="totalWagered">$0.00</p>
+        </div>
+        <div class="stat-card">
+          <h3>Win/Loss Ratio</h3>
+          <p id="winLossRatio">0%</p>
+        </div>
+      </div>
 
+      <!-- Analytics Section -->
+      <section>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>📊 Advanced Analytics</h2>
+          <button onclick="loadAnalytics()" class="btn-primary">Refresh Analytics</button>
+        </div>
+        <div id="analyticsSection" style="margin-top: 20px;"></div>
+      </section>
 
-    <h2>👤 Users</h2>
-    <table id="usersTable" border="1">
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+      <!-- User Management -->
+      <section>
+        <h2>👤 User Management</h2>
+        <div class="action-buttons">
+          <button onclick="bulkChangeUserRole('admin')" class="btn-success">Make Selected Users Admin</button>
+          <button onclick="bulkChangeUserRole('user')" class="btn-info">Make Selected User</button>
+          <button onclick="document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = !cb.checked)" class="btn-primary">Toggle Select All</button>
+        </div>
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAllUsers"></th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Total Bets</th>
+              <th>Total Wagered</th>
+              <th>Win Rate</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
 
-    <h2>🧾 Bets</h2>
-    <table id="betsTable" border="1">
-      <thead>
-        <tr>
-          <th>User ID</th>
-          <th>Bet Type</th>
-          <th>Amount</th>
-          <th>Odds</th>
-          <th>Result</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+      <!-- Bets Management -->
+      <section>
+        <h2>🧾 Bets Management</h2>
+        <div class="action-buttons">
+          <button onclick="bulkDeleteBets()" class="btn-danger">Delete Selected Bets</button>
+          <button onclick="exportBetsToCSV()" class="btn-success">Export as CSV</button>
+          <button onclick="exportBetsToJSON()" class="btn-success">Export as JSON</button>
+          <button onclick="document.querySelectorAll('.bet-checkbox').forEach(cb => cb.checked = !cb.checked)" class="btn-primary">Toggle Select All</button>
+        </div>
+        <table id="betsTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAllBets"></th>
+              <th>User ID</th>
+              <th>Track</th>
+              <th>Bet Type</th>
+              <th>Amount</th>
+              <th>Outcome</th>
+              <th>Winnings</th>
+              <th>ROI</th>
+              <th>Timestamp</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- Audit Logs -->
+      <section>
+        <h2>📝 Audit Logs</h2>
+        <p style="color: #666; font-size: 14px;">All bet submissions are logged for compliance and tracking.</p>
+        <table id="auditTable">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>User ID</th>
+              <th>Action</th>
+              <th>Bet Type</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+    </div>
   </div>
+
+  <!-- Toast Notification -->
+  <div id="toast"></div>
+
+  <!-- Confirmation Dialog -->
+  <div id="confirmDialog">
+    <div class="confirm-box">
+      <h3 id="confirmTitle">Confirm Action</h3>
+      <p id="confirmMessage"></p>
+      <div class="confirm-buttons">
+        <button id="confirmCancel" class="btn-primary">Cancel</button>
+        <button id="confirmYes" class="btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Select All functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectAllUsers = document.getElementById('selectAllUsers');
+      if (selectAllUsers) {
+        selectAllUsers.addEventListener('change', function() {
+          document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = this.checked);
+        });
+      }
+
+      const selectAllBets = document.getElementById('selectAllBets');
+      if (selectAllBets) {
+        selectAllBets.addEventListener('change', function() {
+          document.querySelectorAll('.bet-checkbox').forEach(cb => cb.checked = this.checked);
+        });
+      }
+    });
+  </script>
 
   <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
-
   <script type="module" src="admin.js"></script>
 </body>
 </html>
