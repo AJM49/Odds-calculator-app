@@ -16,6 +16,7 @@ import {
 console.log('📊 Dashboard module loaded');
 console.log('Firebase db object:', db);
 console.log('Firebase init error:', initError);
+console.log('🔍 DEBUG: Page ready, DOM elements available');
 
 // HTML escaping function to prevent XSS (defined early for error messages)
 function escapeHtml(text) {
@@ -80,24 +81,32 @@ let currentUserId = null;
 
 // Wait for user authentication before loading bets
 onAuthStateChanged(auth, user => {
+  console.log('🔐 onAuthStateChanged callback fired');
   const statusEl = document.getElementById('dashboardStatus');
+  console.log('statusEl element found:', !!statusEl);
   console.log('Auth state changed:', user ? `User ${user.uid}` : 'No user');
   
   if (user) {
     currentUserId = user.uid;
+    console.log('✅ User authenticated, currentUserId set to:', currentUserId);
     if (statusEl) {
       statusEl.textContent = `Loading your bets... (User ID: ${user.uid})`;
+      console.log('Status element updated');
     }
     console.log('✓ User authenticated:', user.email);
     console.log('  User UID:', user.uid);
     console.log('  Make sure security rules allow reading bets with userId:', user.uid);
+    console.log('Calling loadBets with userId:', user.uid);
     loadBets(user.uid);
   } else {
+    console.log('❌ No user logged in');
     if (statusEl) {
       statusEl.textContent = 'Redirecting to login...';
     }
     console.log('No user logged in, redirecting to login...');
-    window.location.href = "login.html";
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 1000);
   }
 });
 
@@ -135,44 +144,58 @@ if (refreshBtn) {
  * Loads and listens for changes to bets
  */
 function loadBets(userId) {
-  console.log('Loading bets for user:', userId);
+  console.log('📋 loadBets() called with userId:', userId);
   // Show loading state
   const tableBody = document.getElementById('betsTableBody');
+  console.log('Table body element found:', !!tableBody);
   if (tableBody) {
     tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Loading bets...</td></tr>';
+    console.log('Loading message displayed in table');
+  } else {
+    console.error('❌ ERROR: betsTableBody element not found in DOM!');
   }
   // Fetch bets and display them
+  console.log('Calling fetchAndRenderBets...');
   fetchAndRenderBets(userId);
 }
 
 async function fetchAndRenderBets(userId) {
   try {
+    console.log('🚀 fetchAndRenderBets() started for userId:', userId);
     console.log('Fetching bets from Firestore using Firebase v9+ API...');
     
     // Validate db exists
     if (!db) {
+      console.error('❌ db is null or undefined!');
       throw new Error('Firestore database instance (db) is null or undefined');
     }
+    console.log('✓ db object is valid');
     
     // Build the query using Firebase v9+ functional API
     console.log('Building Firestore query...');
     const betsRef = collection(db, "bets");
+    console.log('✓ betsRef created:', betsRef);
+    
     const q = query(
       betsRef,
       where("userId", "==", userId),
       orderBy("timestamp", "desc"),
       limit(100)
     );
+    console.log('✓ Query object built successfully');
     
     console.log('✓ Query built, executing...');
     const snapshot = await getDocs(q);
+    console.log('✓ getDocs() returned successfully');
 
     console.log(`✓ Query executed successfully`);
     console.log(`Found ${snapshot.docs.length} bets`);
 
     const bets = snapshot.docs.map((doc, idx) => {
       const data = doc.data();
-      console.log(`Processing bet ${idx}:`, data);
+      if (idx < 3) {
+        console.log(`Processing bet ${idx}:`, data);
+      }
       return {
         horseName: data.horseName || "—",
         trackName: data.trackName || "—",
@@ -183,13 +206,19 @@ async function fetchAndRenderBets(userId) {
       };
     });
 
+    console.log('✓ Data transformation complete');
     console.log('Rendering bets...');
     renderBetsTable(bets);
+    console.log('✓ renderBetsTable() completed');
+    
     updateStats(bets);
+    console.log('✓ updateStats() completed');
+    
     console.log('✓ Bets loaded successfully');
   } catch (error) {
-    console.error("Error loading bets:", error);
+    console.error("❌ ERROR loading bets:", error);
     console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
     console.error("Full error:", error);
     
     const tableBody = document.getElementById('betsTableBody');
