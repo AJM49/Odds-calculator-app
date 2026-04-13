@@ -1,7 +1,11 @@
 ---
 name: fullstack-app-dev
 description: "Full-stack web app development agent. Use when: building features, debugging Firebase/Firestore, testing functionality, fixing bugs, integrating frontend with backend, managing security rules, or pushing changes to GitHub. Optimized for apps with vanilla JS frontend, Firebase Auth, Firestore database, and CSS styling."
-applyTo: ""
+applyTo: |
+  **/*.js
+  **/*.html
+  **/*.md
+  .github/**
 tools:
   include:
     - read_file
@@ -15,6 +19,9 @@ tools:
     - run_in_terminal
     - manage_todo_list
     - vscode_askQuestions
+    - github-pull-request_activePullRequest
+    - task_complete
+    - memory
   exclude: []
 ---
 
@@ -113,6 +120,11 @@ Invoke this agent when working on:
 | `db.collection is not a function` | Using old SDK syntax | Use modular: `collection(db, 'name')` |
 | User data missing | User doc not created on signup | Implement user doc creation in signup |
 | Cannot read property `.value` | HTML element doesn't exist | Check element ID matches HTML |
+| `Cannot read property 'docs'` | `getDocs()` failed silently | Check console, verify query syntax |
+| `async/await not working` | Function not marked async | Add `async` keyword to function |
+| `module not found` | Wrong import path | Check relative paths, use `./` for local files |
+| `Forms not submitting` | Event handler not found | Check element IDs match HTML |
+| `CORS error` | Firebase CDN temporarily blocked | Usually temp, try hard refresh (Ctrl+Shift+R) |
 
 ### Testing Workflow
 ```javascript
@@ -123,6 +135,116 @@ console.log('✓ Feature X completed');
 
 // Check in browser console (F12) for messages
 ```
+
+## Firestore Common Patterns
+
+### User Documents
+```javascript
+// users collection structure
+{
+  uid: string,          // Same as doc ID
+  email: string,
+  role: "user" | "admin"
+}
+```
+
+### Bet Documents
+```javascript
+// bets collection structure
+{
+  userId: string,           // Link to user
+  trackName: string,
+  horseName: string,
+  betType: string,
+  betAmount: number,
+  outcome: "win" | "loss" | "pending",
+  timestamp: Timestamp,
+  winnings: number
+}
+```
+
+### Query Patterns
+```javascript
+// Read user's own bets
+const q = query(
+  collection(db, 'bets'),
+  where('userId', '==', user.uid),
+  orderBy('timestamp', 'desc')
+);
+const snapshot = await getDocs(q);
+
+// Admin: read all bets
+const q = query(
+  collection(db, 'bets'),
+  orderBy('timestamp', 'desc'),
+  limit(100)
+);
+const snapshot = await getDocs(q);
+```
+
+## UI Patterns
+
+### Loading States
+```javascript
+function showLoadingSpinner() {
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('submitBtn').disabled = true;
+}
+
+function hideLoadingSpinner() {
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('submitBtn').disabled = false;
+}
+
+// Usage
+try {
+  showLoadingSpinner();
+  await submitBet();
+  showStatus('✓ Bet saved!', 'success');
+} catch (err) {
+  showStatus('✗ Error: ' + err.message, 'error');
+} finally {
+  hideLoadingSpinner();
+}
+```
+
+### Error Messages
+- Be specific: "Email already in use" not just "Error"
+- Show to user, log to console
+- Include actionable next steps
+
+## Security Checklist
+
+Never commit:
+- [ ] Firebase private keys or config with real secrets
+- [ ] Admin credentials in code
+- [ ] Hardcoded passwords or tokens
+- [ ] API keys in frontend code (firebaseConfig is OK - it's public)
+
+Security rules validation:
+- [ ] Users can't read other users' bets
+- [ ] Only admins can modify user roles
+- [ ] Non-admins can't access /admin.html
+- [ ] Audit logs are protected from tampering
+
+## Performance Best Practices
+
+### Firestore Optimization
+- Limit queries: Always use `limit(100)` or pagination
+- Index by default: Orders and where clauses need indexes
+- Batch reads: Use `writeBatch()` for multiple writes
+- Cache results: Keep data in memory instead of re-querying
+
+### Frontend
+- Debounce search: Wait for user to stop typing before querying
+- Lazy load: Don't load all data on page load
+- Minimize DOM updates: Batch innerHTML changes
+- Use event delegation: Single listener for many items
+
+### What to Monitor
+- Firebase read/write counts (shown in console)
+- Browser memory usage (DevTools → Performance)
+- Network requests (DevTools → Network tab)
 
 ### Git Workflow
 ```bash
