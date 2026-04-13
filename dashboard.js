@@ -126,6 +126,15 @@ if (logoutBtn) {
   });
 }
 
+// Back to betting page functionality
+const backBtn = document.getElementById('backBtn');
+if (backBtn) {
+  backBtn.addEventListener('click', () => {
+    console.log('Going back to betting page...');
+    window.location.href = 'index.html';
+  });
+}
+
 // Refresh functionality
 const refreshBtn = document.getElementById('refreshBtn');
 if (refreshBtn) {

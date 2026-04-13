@@ -93,6 +93,27 @@ table {
   outline-offset: 2px;
 }
 
+.back-btn {
+  background-color: #6b7280;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+  background-color: #4b5563;
+}
+
+.back-btn:focus {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
 /* Stats container styling */
 .stats-container {
   display: grid;
