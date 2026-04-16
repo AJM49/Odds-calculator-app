@@ -3,85 +3,222 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Horse Odds Calculator</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <!-- In index.html (nav section or header) -->
-<a href="dashboard.html">User Dashboard</a>
+  <title>Horse Bet Calculator</title>
 
+  <link rel="stylesheet" href="styles.css" />
 
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f2a44;
+      color: #fff;
+    }
 
-  <!-- Firebase SDKs -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
-  
-  <!-- Your main logic -->
-  <script type="module" src="app.js"></script>
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .balance {
+      font-size: 16px;
+      opacity: 0.8;
+    }
+
+    .hero {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .hero-card {
+      flex: 1;
+      background: linear-gradient(135deg, #1e4b7a, #3a7bd5);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .hero-card button {
+      margin-top: 10px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 20px;
+      background: #fff;
+      color: #000;
+      font-weight: bold;
+    }
+
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background: #0c2236;
+    }
+
+    .section {
+      padding: 10px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .race-card {
+      background: #fff;
+      color: #000;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .race-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+
+    .race-meta {
+      font-size: 12px;
+      color: #555;
+    }
+
+    .race-time {
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      background: #0c2236;
+      justify-content: space-around;
+      padding: 10px 0;
+    }
+
+    .nav-item {
+      text-align: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
-  <h1>🐎 Horse Odds Calculator</h1>
-  <form id="bettingForm">
-    <div class="form-group">
-      <label for="betMode">Bet Mode:</label>
-      <select id="betMode">
-        <option value="win">Win</option>
-        <option value="place">Place</option>
-        <option value="show">Show</option>
-        <option value="exacta">Exacta</option>
-        <option value="exacta_box">Exacta Box</option>
-        <option value="trifecta">Trifecta</option>
-        <option value="trifecta_key">Trifecta Key</option>
-        <option value="superfecta">Superfecta</option>
-        <option value="pick3">Pick 3</option>
-        <option value="pick4">Pick 4</option>
-        <option value="pick5">Pick 5</option>
-        <option value="pick6">Pick 6</option>
-      </select>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>HorseCalc</div>
+    <div class="balance">Balance: $0.00</div>
+  </div>
+
+  <!-- HERO ACTIONS -->
+  <div class="hero">
+    <div class="hero-card">
+      <div>Quick Bet</div>
+      <button onclick="openBetBuilder()">Start</button>
     </div>
 
-    <div id="dynamicFields">
-      <!-- Dynamic fields will be inserted here -->
+    <div class="hero-card">
+      <div>See Picks</div>
+      <button onclick="loadPicks()">View</button>
+    </div>
+  </div>
+
+  <!-- FILTER -->
+  <div class="filter-bar">
+    <div>Filter</div>
+    <div>Search</div>
+  </div>
+
+  <!-- FAVORITES -->
+  <div class="section">
+    <div class="section-title">Favorite Tracks</div>
+
+    <div class="race-card" onclick="selectRace('Tampa Bay Downs', 1)">
+      <div class="race-header">
+        <span>Tampa Bay Downs</span>
+        <span>R1</span>
+      </div>
+      <div class="race-meta">Dirt • 7F • $32K</div>
+      <div class="race-time">12:20 PM</div>
     </div>
 
-    <div class="form-group">
-      <label for="betAmount">Bet Amount (min $0.50):</label>
-      <input type="number" id="betAmount" placeholder="Enter amount (min $0.50)" min="0.5" step="0.01" />
+  </div>
+
+  <!-- FEATURED -->
+  <div class="section">
+    <div class="section-title">Featured Tracks</div>
+
+    <div class="race-card" onclick="selectRace('Parx Racing', 3)">
+      <div class="race-header">
+        <span>Parx Racing</span>
+        <span>R3</span>
+      </div>
+      <div class="race-meta">Dirt • 1 Mile • $75K</div>
+      <div class="race-time">1:05 PM</div>
     </div>
 
-    <div class="form-group" id="oddsGroup">
-      <label for="oddsInput">Odds (e.g. 5/2):</label>
-      <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" />
+  </div>
+
+  <!-- UPCOMING -->
+  <div class="section">
+    <div class="section-title">Upcoming Races</div>
+
+    <div class="race-card" onclick="selectRace('Cordemais', 4)">
+      <div class="race-header">
+        <span>FRA Cordemais</span>
+        <span>R4</span>
+      </div>
+      <div class="race-meta">Turf • 2100m</div>
+      <div class="race-time">2:30 PM</div>
     </div>
 
-    <div class="form-group">
-      <label for="isWinner">Did the bet win?</label>
-      <input type="checkbox" id="isWinner" />
-    </div>
+  </div>
 
-    <div class="form-actions">
-      <button type="button" id="calculateBtn">Calculate</button>
-      <button type="button" id="submitBetBtn">Submit Bet</button>
-      <button type="button" class="share-button" id="shareBtn">Share Bet</button>
-      <button type="button" id="fetchPayoutBtn">Fetch Live Odds (Mock)</button>
-    </div>
-    <div id="result"></div>
-  </form>
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="goHome()">Home</div>
+    <div class="nav-item" onclick="openCalculator()">Calculator</div>
+    <div class="nav-item" onclick="viewBets()">Bets</div>
+    <div class="nav-item" onclick="viewHistory()">History</div>
+    <div class="nav-item" onclick="openSettings()">Settings</div>
+  </div>
 
-  <h3>📜 History</h3>
-  <button type="button" id="loadHistoryBtn">Load Bet History</button>
-  <div id="historySection"></div>
+  <!-- SCRIPT HOOKS -->
+  <script>
+    function selectRace(track, race) {
+      console.log("Selected:", track, race);
+      openCalculator(track, race);
+    }
 
-  <!-- The authentication UI for signing up/in/out should ideally be on a dedicated login/authentication page. -->
-  <!-- On a protected page, only the user's authentication status might be displayed. -->
-  <h3>🔐 Auth</h3>
-  <div id="authStatus">Not logged in</div>
+    function openBetBuilder() {
+      console.log("Open Bet Builder");
+    }
 
-  
-<section id="user-dashboard" style="display:none;">
-  <!-- dashboard content will be here -->
-</section>
+    function loadPicks() {
+      console.log("Load Picks");
+    }
+
+    function openCalculator(track, race) {
+      console.log("Calculator:", track, race);
+    }
+
+    function goHome() {}
+    function viewBets() {}
+    function viewHistory() {}
+    function openSettings() {}
+  </script>
 
 </body>
 </html>
