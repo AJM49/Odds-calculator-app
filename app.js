@@ -18,6 +18,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ================= CONFIG =================
+const API_BASE = "https://api.example.com"; // replace with real provider
+
 // ================= STATE =================
 const state = {
   selectedTrack: null,
@@ -31,15 +34,16 @@ const state = {
 // ================= INIT =================
 document.addEventListener("DOMContentLoaded", async () => {
   renderDemoRaces();
+  await autoSettleBets();
   await loadAnalytics();
 });
 
-// ================= DEMO RACES =================
+// ================= DEMO =================
 function renderDemoRaces() {
   const section = document.querySelector(".section");
   section.innerHTML = "<h3>Races</h3>";
 
-  ["Tampa R1", "Parx R3"].forEach(r => {
+  ["Tampa-1", "Parx-3"].forEach(r => {
     const div = document.createElement("div");
     div.className = "race-card";
     div.innerText = r;
@@ -50,7 +54,10 @@ function renderDemoRaces() {
 
 // ================= SELECT =================
 function selectRace(label) {
-  state.selectedTrack = label;
+  const [track, race] = label.split("-");
+  state.selectedTrack = track;
+  state.selectedRace = race;
+
   loadOdds();
   openBuilder();
 }
@@ -74,10 +81,9 @@ function openBuilder() {
   }
 
   panel.innerHTML = `
-    <h3>${state.selectedTrack}</h3>
+    <h3>${state.selectedTrack} Race ${state.selectedRace}</h3>
 
     <button onclick="setBetType('win')">Win</button>
-    <button onclick="setBetType('exacta')">Exacta</button>
 
     <div id="horseGrid"></div>
 
@@ -103,6 +109,7 @@ function renderHorses() {
 
 function toggleHorse(h, btn) {
   const i = state.selectedHorses.indexOf(h);
+
   if (i > -1) {
     state.selectedHorses.splice(i, 1);
     btn.style.background = "#fff";
@@ -116,7 +123,6 @@ function toggleHorse(h, btn) {
 // ================= STATE =================
 function setBetType(t) {
   state.betType = t;
-  state.selectedHorses = [];
 }
 
 function setStake(v) {
@@ -126,21 +132,56 @@ function setStake(v) {
 // ================= PLACE BET =================
 async function placeBet() {
   const bet = {
-    ...state,
+    track: state.selectedTrack,
+    race: state.selectedRace,
+    horses: state.selectedHorses,
+    stake: state.stake,
+    odds: state.odds,
     result: "pending",
     payout: 0,
     createdAt: new Date().toISOString()
   };
 
   await addDoc(collection(db, "bets"), bet);
-  await loadAnalytics();
 }
 
-// ================= SETTLE BET =================
-async function settleBet(id, result, payout) {
-  const ref = doc(db, "bets", id);
-  await updateDoc(ref, { result, payout });
-  await loadAnalytics();
+// ================= LIVE RESULTS =================
+async function fetchResults(track, race) {
+  try {
+    const res = await fetch(`${API_BASE}/results?track=${track}&race=${race}`);
+    const data = await res.json();
+
+    // expected format: { winner: 3 }
+    return data.winner;
+
+  } catch {
+    return null;
+  }
+}
+
+// ================= AUTO SETTLEMENT =================
+async function autoSettleBets() {
+  const snap = await getDocs(collection(db, "bets"));
+
+  for (const d of snap.docs) {
+    const bet = d.data();
+
+    if (bet.result !== "pending") continue;
+
+    const winner = await fetchResults(bet.track, bet.race);
+    if (!winner) continue;
+
+    const isWin = bet.horses.includes(winner);
+
+    const payout = isWin
+      ? bet.stake * parseFloat(bet.odds[winner])
+      : 0;
+
+    await updateDoc(doc(db, "bets", d.id), {
+      result: isWin ? "win" : "loss",
+      payout: payout
+    });
+  }
 }
 
 // ================= ANALYTICS =================
@@ -149,81 +190,66 @@ async function loadAnalytics() {
 
   let stake = 0;
   let returns = 0;
-  let wins = 0;
-  let total = 0;
-
-  const curve = [];
+  let perRace = {};
+  let breakdown = [];
 
   snap.forEach(d => {
     const b = d.data();
 
-    total++;
     stake += b.stake;
+    returns += b.payout;
 
-    if (b.result === "win") {
-      wins++;
-      returns += b.payout;
+    const key = `${b.track}-${b.race}`;
+    if (!perRace[key]) {
+      perRace[key] = { stake: 0, return: 0 };
     }
 
-    curve.push(b.payout - b.stake);
-  });
+    perRace[key].stake += b.stake;
+    perRace[key].return += b.payout;
 
-  const roi = stake ? ((returns - stake) / stake) * 100 : 0;
-  const winRate = total ? (wins / total) * 100 : 0;
-
-  renderPerformance(roi, winRate, stake, returns);
-  renderChart(curve);
-  renderSignals(snap);
-}
-
-// ================= PERFORMANCE =================
-function renderPerformance(roi, winRate, stake, returns) {
-  document.getElementById("performanceSection").innerHTML = `
-    <h3>Performance</h3>
-    ROI: ${roi.toFixed(2)}%<br>
-    Win Rate: ${winRate.toFixed(2)}%<br>
-    Stake: $${stake}<br>
-    Return: $${returns}
-  `;
-}
-
-// ================= CHART =================
-function renderChart(curve) {
-  const ctx = document.getElementById("roiChart");
-
-  let sum = 0;
-  const cumulative = curve.map(v => (sum += v));
-
-  new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: cumulative.map((_, i) => i + 1),
-      datasets: [{ label: "Profit", data: cumulative }]
-    }
-  });
-}
-
-// ================= SIGNALS =================
-function renderSignals(snap) {
-  let sharp = 0;
-  let publicBets = 0;
-
-  snap.forEach(d => {
-    const b = d.data();
-
-    let implied = 0;
-    b.selectedHorses.forEach(h => {
-      const o = parseFloat(b.odds[h]);
-      implied += 1 / (o + 1);
+    breakdown.push({
+      race: key,
+      stake: b.stake,
+      payout: b.payout,
+      profit: b.payout - b.stake
     });
-
-    if (implied < 0.5) sharp++;
-    else publicBets++;
   });
 
-  document.getElementById("performanceSection").innerHTML += `
-    <h4>Market Signals</h4>
-    Sharp: ${sharp}<br>
-    Public: ${publicBets}
-  `;
+  renderRaceROI(perRace);
+  renderBreakdown(breakdown);
+}
+
+// ================= ROI PER RACE =================
+function renderRaceROI(data) {
+  let html = "<h3>ROI by Race</h3>";
+
+  Object.keys(data).forEach(r => {
+    const s = data[r].stake;
+    const ret = data[r].return;
+
+    const roi = s ? ((ret - s) / s) * 100 : 0;
+
+    html += `${r}: ${roi.toFixed(2)}%<br>`;
+  });
+
+  document.getElementById("performanceSection").innerHTML = html;
+}
+
+// ================= PER BET =================
+function renderBreakdown(list) {
+  const section = document.getElementById("betBreakdownSection");
+
+  section.innerHTML = "<h3>Bet Breakdown</h3>";
+
+  list.forEach(b => {
+    const div = document.createElement("div");
+
+    div.innerText = `
+      ${b.race} | Stake: $${b.stake}
+      | Payout: $${b.payout}
+      | Profit: $${b.profit}
+    `;
+
+    section.appendChild(div);
+  });
 }
