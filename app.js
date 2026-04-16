@@ -1,22 +1,20 @@
 // ================= FIREBASE =================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔴 REPLACE WITH YOUR REAL CONFIG
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_ID",
-  appId: "YOUR_APP_ID"
+  projectId: "YOUR_PROJECT_ID"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// ================= CONFIG =================
-const API_BASE = "https://api.example.com"; // replace with real provider
 
 // ================= STATE =================
 const state = {
@@ -29,70 +27,30 @@ const state = {
   races: []
 };
 
-// ================= DATA PROVIDER =================
-const DATA_PROVIDER = {
+// ================= INIT =================
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadRaces();
+  renderRaces();
+  loadHistory();
+  loadAdminStats();
+});
 
-  async getRaces() {
-    try {
-      const res = await fetch(`${API_BASE}/races`);
-      const data = await res.json();
-      return normalizeRaces(data);
-    } catch {
-      return fallbackRaces();
-    }
-  },
-
-  async getOdds(track, race) {
-    try {
-      const res = await fetch(`${API_BASE}/odds?track=${track}&race=${race}`);
-      const data = await res.json();
-      return normalizeOdds(data);
-    } catch {
-      return fallbackOdds();
-    }
-  }
-};
-
-// ================= NORMALIZATION =================
-function normalizeRaces(data) {
-  return data.races.map(r => ({
-    track: r.track_name,
-    race: r.race_number,
-    time: r.post_time
-  }));
-}
-
-function normalizeOdds(data) {
-  const map = {};
-  data.runners.forEach(h => {
-    map[h.number] = parseFloat(h.odds);
-  });
-  return map;
-}
-
-// ================= FALLBACK =================
-function fallbackRaces() {
-  return [
+// ================= DATA =================
+async function loadRaces() {
+  state.races = [
     { track: "Tampa", race: 1, time: "12:20 PM" },
     { track: "Parx", race: 3, time: "1:05 PM" }
   ];
 }
 
-function fallbackOdds() {
-  const odds = {};
+async function loadOdds() {
+  state.odds = {};
   for (let i = 1; i <= 8; i++) {
-    odds[i] = (Math.random() * 10 + 2).toFixed(2);
+    state.odds[i] = (Math.random() * 10 + 2).toFixed(2);
   }
-  return odds;
 }
 
-// ================= INIT =================
-document.addEventListener("DOMContentLoaded", async () => {
-  state.races = await DATA_PROVIDER.getRaces();
-  renderRaces();
-});
-
-// ================= UI: RACES =================
+// ================= UI =================
 function renderRaces() {
   const section = document.querySelector(".section");
   section.innerHTML = "<h3>Live Races</h3>";
@@ -100,21 +58,17 @@ function renderRaces() {
   state.races.forEach(r => {
     const div = document.createElement("div");
     div.className = "race-card";
-
-    div.innerHTML = `${r.track} - Race ${r.race}<br><small>${r.time}</small>`;
+    div.innerText = `${r.track} - Race ${r.race}`;
     div.onclick = () => selectRace(r.track, r.race);
-
     section.appendChild(div);
   });
 }
 
-// ================= SELECT RACE =================
+// ================= SELECT =================
 async function selectRace(track, race) {
   state.selectedTrack = track;
   state.selectedRace = race;
-
-  state.odds = await DATA_PROVIDER.getOdds(track, race);
-
+  await loadOdds();
   openCalculator();
 }
 
@@ -128,23 +82,19 @@ function openCalculator() {
     document.body.appendChild(panel);
   }
 
-  renderBetBuilder(panel);
-}
-
-function renderBetBuilder(panel) {
   panel.innerHTML = `
     <h3>${state.selectedTrack} Race ${state.selectedRace}</h3>
 
     <button onclick="setBetType('win')">Win</button>
-    <button onclick="setBetType('exacta_box')">Exacta Box</button>
-    <button onclick="setBetType('trifecta_box')">Trifecta Box</button>
+    <button onclick="setBetType('exacta_box')">Exacta</button>
 
-    <div id="horseGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;"></div>
+    <div id="horseGrid"></div>
 
     <input type="number" placeholder="Stake" oninput="setStake(this.value)" />
 
-    <div id="comboCount"></div>
     <div id="payoutResult"></div>
+    <div id="evResult"></div>
+    <div id="valueSignal"></div>
 
     <button onclick="placeBet()">Place Bet</button>
   `;
@@ -159,10 +109,8 @@ function renderHorseGrid() {
 
   Object.keys(state.odds).forEach(num => {
     const btn = document.createElement("button");
-
     btn.innerText = `${num} (${state.odds[num]})`;
     btn.onclick = () => toggleHorse(Number(num), btn);
-
     grid.appendChild(btn);
   });
 }
@@ -186,7 +134,6 @@ function toggleHorse(horse, btn) {
 function setBetType(type) {
   state.betType = type;
   state.selectedHorses = [];
-  calculate();
 }
 
 function setStake(val) {
@@ -194,80 +141,87 @@ function setStake(val) {
   calculate();
 }
 
-// ================= ENGINE =================
+// ================= ANALYTICS ENGINE =================
 function calculate() {
-  const combos = getCombos();
-  const payout = simulatePayout(combos);
-  updateUI(combos, payout);
+  const prob = getProbability();
+  const payout = getPayout();
+  const ev = (prob * payout) - state.stake;
+
+  const value = ev > 0 ? "VALUE BET" : "NO EDGE";
+
+  updateUI(payout, ev, value);
 }
 
-function getCombos() {
-  const n = state.selectedHorses.length;
+function getProbability() {
+  let p = 0;
 
-  if (state.betType === "win") return n;
-  if (state.betType === "exacta_box" && n >= 2) return perm(n, 2);
-  if (state.betType === "trifecta_box" && n >= 3) return perm(n, 3);
+  state.selectedHorses.forEach(h => {
+    const odds = parseFloat(state.odds[h]);
+    p += 1 / (odds + 1);
+  });
 
-  return 0;
+  return Math.min(p, 1);
 }
 
-// ================= PAYOUT =================
-function simulatePayout(combos) {
-  if (!combos || !state.stake) return 0;
-
-  const pool = 10000;
-  const takeout = 0.18;
-  const net = pool * (1 - takeout);
-  const tickets = 1000;
-
-  return (net / tickets) * combos;
-}
-
-// ================= MATH =================
-function perm(n, r) {
-  return fact(n) / fact(n - r);
-}
-
-function fact(n) {
-  if (n <= 1) return 1;
-  return n * fact(n - 1);
+function getPayout() {
+  return state.stake * 5; // simplified
 }
 
 // ================= UI =================
-function updateUI(combos, payout) {
-  document.getElementById("comboCount").innerText = `Combos: ${combos}`;
+function updateUI(payout, ev, value) {
   document.getElementById("payoutResult").innerText = `Payout: $${payout.toFixed(2)}`;
+  document.getElementById("evResult").innerText = `EV: $${ev.toFixed(2)}`;
+  document.getElementById("valueSignal").innerText = value;
 }
 
-// ================= FIRESTORE SAVE =================
+// ================= FIRESTORE =================
 async function placeBet() {
   const bet = {
-    track: state.selectedTrack,
-    race: state.selectedRace,
-    betType: state.betType,
-    horses: state.selectedHorses,
-    stake: state.stake,
-    odds: state.odds,
+    ...state,
     createdAt: new Date().toISOString()
   };
 
-  try {
-    await addDoc(collection(db, "bets"), bet);
-    alert("Bet saved");
-  } catch (err) {
-    console.error(err);
-    alert("Error saving bet");
-  }
+  await addDoc(collection(db, "bets"), bet);
 
-  resetState();
+  loadHistory();
+  loadAdminStats();
 }
 
-// ================= RESET =================
-function resetState() {
-  state.selectedHorses = [];
-  state.betType = null;
-  state.stake = 0;
+// ================= USER HISTORY =================
+async function loadHistory() {
+  const snap = await getDocs(collection(db, "bets"));
+  const section = document.getElementById("historySection");
 
-  const panel = document.getElementById("betBuilder");
-  if (panel) panel.remove();
+  section.innerHTML = "<h3>Bet History</h3>";
+
+  snap.forEach(doc => {
+    const bet = doc.data();
+
+    const div = document.createElement("div");
+    div.innerText = `${bet.track} R${bet.selectedRace} - $${bet.stake}`;
+
+    section.appendChild(div);
+  });
+}
+
+// ================= ADMIN DASHBOARD =================
+async function loadAdminStats() {
+  const snap = await getDocs(collection(db, "bets"));
+
+  let totalBets = 0;
+  let totalStake = 0;
+
+  snap.forEach(doc => {
+    const bet = doc.data();
+    totalBets++;
+    totalStake += bet.stake;
+  });
+
+  const section = document.getElementById("adminSection");
+
+  section.innerHTML = `
+    <h3>Admin Analytics</h3>
+    Total Bets: ${totalBets}<br>
+    Total Stake: $${totalStake}
+  `;
 }
