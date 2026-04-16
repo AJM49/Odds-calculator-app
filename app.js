@@ -76,36 +76,98 @@ function showBetBuilder() {
     document.body.appendChild(panel);
   }
 
-  renderBetBuilder(panel);
-}
-
-// ================================
-// RENDER BET BUILDER
-// ================================
-function renderBetBuilder(panel) {
+  function renderBetBuilder(panel) {
   panel.innerHTML = `
     <h3>${state.selectedTrack} - Race ${state.selectedRace}</h3>
 
-    <label>Bet Type</label>
-    <select onchange="setBetType(this.value)">
-      <option value="">Select</option>
-      <option value="win">Win</option>
-      <option value="exacta">Exacta</option>
-      <option value="trifecta">Trifecta</option>
-    </select>
+    <div><strong>Select Bet Type</strong></div>
+    <div id="betTypes" style="display:flex; gap:10px; margin-bottom:10px;">
+      <button onclick="setBetType('win')">Win</button>
+      <button onclick="setBetType('exacta')">Exacta</button>
+      <button onclick="setBetType('trifecta')">Trifecta</button>
+    </div>
 
-    <label>Horses (comma separated)</label>
-    <input type="text" placeholder="e.g. 1,2,3" oninput="setHorses(this.value)" />
+    <div><strong>Select Horses</strong></div>
+    <div id="horseGrid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;"></div>
 
-    <label>Stake</label>
-    <input type="number" oninput="setStake(this.value)" />
+    <div style="margin-top:10px;">
+      <strong>Stake</strong>
+      <input type="number" placeholder="Amount" oninput="setStake(this.value)" />
+    </div>
 
+    <div id="comboCount">Combinations: 0</div>
     <div id="payoutResult">Payout: $0.00</div>
 
     <button onclick="placeBet()">Place Bet</button>
   `;
+
+  renderHorseGrid(8); // default 8 horses
+}
+  function renderHorseGrid(totalHorses) {
+  const grid = document.getElementById("horseGrid");
+  grid.innerHTML = "";
+
+  for (let i = 1; i <= totalHorses; i++) {
+    const btn = document.createElement("button");
+    btn.innerText = i;
+
+    btn.onclick = () => toggleHorse(i, btn);
+
+    btn.style.padding = "10px";
+    btn.style.borderRadius = "8px";
+    btn.style.border = "1px solid #ccc";
+
+    grid.appendChild(btn);
+  }
 }
 
+function toggleHorse(horse, btn) {
+  const index = state.selectedHorses.indexOf(horse);
+
+  if (index > -1) {
+    state.selectedHorses.splice(index, 1);
+    btn.style.background = "#fff";
+  } else {
+    state.selectedHorses.push(horse);
+    btn.style.background = "#4caf50";
+    btn.style.color = "#fff";
+  }
+
+  calculatePayout();
+}
+  function calculatePayout() {
+  let combos = 0;
+  let payout = 0;
+
+  const n = state.selectedHorses.length;
+  const stake = state.stake || 0;
+
+  if (!state.betType || n === 0 || stake === 0) {
+    updateUI(0, 0);
+    return;
+  }
+
+  switch (state.betType) {
+    case "win":
+      combos = n;
+      payout = stake * 2;
+      break;
+
+    case "exacta":
+      if (n < 2) return updateUI(0, 0);
+      combos = factorial(n) / factorial(n - 2);
+      payout = stake * combos * 5;
+      break;
+
+    case "trifecta":
+      if (n < 3) return updateUI(0, 0);
+      combos = factorial(n) / factorial(n - 3);
+      payout = stake * combos * 10;
+      break;
+  }
+
+  updateUI(combos, payout);
+}
 // ================================
 // STATE UPDATES
 // ================================
@@ -122,6 +184,10 @@ function setHorses(input) {
 function setStake(amount) {
   state.stake = parseFloat(amount) || 0;
   calculatePayout();
+}
+  function factorial(num) {
+  if (num <= 1) return 1;
+  return num * factorial(num - 1);
 }
 
 // ================================
@@ -158,11 +224,12 @@ function calculatePayout() {
 // ================================
 // UI UPDATE
 // ================================
-function updatePayoutUI(amount) {
-  const el = document.getElementById("payoutResult");
-  if (el) {
-    el.innerText = `Payout: $${amount.toFixed(2)}`;
-  }
+function updateUI(combos, payout) {
+  const comboEl = document.getElementById("comboCount");
+  const payoutEl = document.getElementById("payoutResult");
+
+  if (comboEl) comboEl.innerText = `Combinations: ${combos}`;
+  if (payoutEl) payoutEl.innerText = `Payout: $${payout.toFixed(2)}`;
 }
 
 // ================================
