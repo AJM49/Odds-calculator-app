@@ -4,7 +4,9 @@ import {
   getFirestore,
   collection,
   addDoc,
-  getDocs
+  getDocs,
+  doc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -23,57 +25,46 @@ const state = {
   betType: null,
   selectedHorses: [],
   stake: 0,
-  odds: {},
-  races: []
+  odds: {}
 };
 
 // ================= INIT =================
 document.addEventListener("DOMContentLoaded", async () => {
-  await loadRaces();
-  renderRaces();
-  loadHistory();
-  loadAdminStats();
+  renderDemoRaces();
+  await loadAnalytics();
 });
 
-// ================= DATA =================
-async function loadRaces() {
-  state.races = [
-    { track: "Tampa", race: 1, time: "12:20 PM" },
-    { track: "Parx", race: 3, time: "1:05 PM" }
-  ];
+// ================= DEMO RACES =================
+function renderDemoRaces() {
+  const section = document.querySelector(".section");
+  section.innerHTML = "<h3>Races</h3>";
+
+  ["Tampa R1", "Parx R3"].forEach(r => {
+    const div = document.createElement("div");
+    div.className = "race-card";
+    div.innerText = r;
+    div.onclick = () => selectRace(r);
+    section.appendChild(div);
+  });
 }
 
-async function loadOdds() {
+// ================= SELECT =================
+function selectRace(label) {
+  state.selectedTrack = label;
+  loadOdds();
+  openBuilder();
+}
+
+// ================= ODDS =================
+function loadOdds() {
   state.odds = {};
   for (let i = 1; i <= 8; i++) {
     state.odds[i] = (Math.random() * 10 + 2).toFixed(2);
   }
 }
 
-// ================= UI =================
-function renderRaces() {
-  const section = document.querySelector(".section");
-  section.innerHTML = "<h3>Live Races</h3>";
-
-  state.races.forEach(r => {
-    const div = document.createElement("div");
-    div.className = "race-card";
-    div.innerText = `${r.track} - Race ${r.race}`;
-    div.onclick = () => selectRace(r.track, r.race);
-    section.appendChild(div);
-  });
-}
-
-// ================= SELECT =================
-async function selectRace(track, race) {
-  state.selectedTrack = track;
-  state.selectedRace = race;
-  await loadOdds();
-  openCalculator();
-}
-
-// ================= BET BUILDER =================
-function openCalculator() {
+// ================= BUILDER =================
+function openBuilder() {
   let panel = document.getElementById("betBuilder");
 
   if (!panel) {
@@ -83,145 +74,156 @@ function openCalculator() {
   }
 
   panel.innerHTML = `
-    <h3>${state.selectedTrack} Race ${state.selectedRace}</h3>
+    <h3>${state.selectedTrack}</h3>
 
     <button onclick="setBetType('win')">Win</button>
-    <button onclick="setBetType('exacta_box')">Exacta</button>
+    <button onclick="setBetType('exacta')">Exacta</button>
 
     <div id="horseGrid"></div>
 
     <input type="number" placeholder="Stake" oninput="setStake(this.value)" />
 
-    <div id="payoutResult"></div>
-    <div id="evResult"></div>
-    <div id="valueSignal"></div>
-
     <button onclick="placeBet()">Place Bet</button>
   `;
 
-  renderHorseGrid();
+  renderHorses();
 }
 
-// ================= HORSES =================
-function renderHorseGrid() {
+function renderHorses() {
   const grid = document.getElementById("horseGrid");
   grid.innerHTML = "";
 
-  Object.keys(state.odds).forEach(num => {
+  Object.keys(state.odds).forEach(n => {
     const btn = document.createElement("button");
-    btn.innerText = `${num} (${state.odds[num]})`;
-    btn.onclick = () => toggleHorse(Number(num), btn);
+    btn.innerText = `${n} (${state.odds[n]})`;
+    btn.onclick = () => toggleHorse(Number(n), btn);
     grid.appendChild(btn);
   });
 }
 
-function toggleHorse(horse, btn) {
-  const idx = state.selectedHorses.indexOf(horse);
-
-  if (idx > -1) {
-    state.selectedHorses.splice(idx, 1);
+function toggleHorse(h, btn) {
+  const i = state.selectedHorses.indexOf(h);
+  if (i > -1) {
+    state.selectedHorses.splice(i, 1);
     btn.style.background = "#fff";
   } else {
-    state.selectedHorses.push(horse);
+    state.selectedHorses.push(h);
     btn.style.background = "#4caf50";
     btn.style.color = "#fff";
   }
-
-  calculate();
 }
 
 // ================= STATE =================
-function setBetType(type) {
-  state.betType = type;
+function setBetType(t) {
+  state.betType = t;
   state.selectedHorses = [];
 }
 
-function setStake(val) {
-  state.stake = parseFloat(val) || 0;
-  calculate();
+function setStake(v) {
+  state.stake = parseFloat(v) || 0;
 }
 
-// ================= ANALYTICS ENGINE =================
-function calculate() {
-  const prob = getProbability();
-  const payout = getPayout();
-  const ev = (prob * payout) - state.stake;
-
-  const value = ev > 0 ? "VALUE BET" : "NO EDGE";
-
-  updateUI(payout, ev, value);
-}
-
-function getProbability() {
-  let p = 0;
-
-  state.selectedHorses.forEach(h => {
-    const odds = parseFloat(state.odds[h]);
-    p += 1 / (odds + 1);
-  });
-
-  return Math.min(p, 1);
-}
-
-function getPayout() {
-  return state.stake * 5; // simplified
-}
-
-// ================= UI =================
-function updateUI(payout, ev, value) {
-  document.getElementById("payoutResult").innerText = `Payout: $${payout.toFixed(2)}`;
-  document.getElementById("evResult").innerText = `EV: $${ev.toFixed(2)}`;
-  document.getElementById("valueSignal").innerText = value;
-}
-
-// ================= FIRESTORE =================
+// ================= PLACE BET =================
 async function placeBet() {
   const bet = {
     ...state,
+    result: "pending",
+    payout: 0,
     createdAt: new Date().toISOString()
   };
 
   await addDoc(collection(db, "bets"), bet);
-
-  loadHistory();
-  loadAdminStats();
+  await loadAnalytics();
 }
 
-// ================= USER HISTORY =================
-async function loadHistory() {
+// ================= SETTLE BET =================
+async function settleBet(id, result, payout) {
+  const ref = doc(db, "bets", id);
+  await updateDoc(ref, { result, payout });
+  await loadAnalytics();
+}
+
+// ================= ANALYTICS =================
+async function loadAnalytics() {
   const snap = await getDocs(collection(db, "bets"));
-  const section = document.getElementById("historySection");
 
-  section.innerHTML = "<h3>Bet History</h3>";
+  let stake = 0;
+  let returns = 0;
+  let wins = 0;
+  let total = 0;
 
-  snap.forEach(doc => {
-    const bet = doc.data();
+  const curve = [];
 
-    const div = document.createElement("div");
-    div.innerText = `${bet.track} R${bet.selectedRace} - $${bet.stake}`;
+  snap.forEach(d => {
+    const b = d.data();
 
-    section.appendChild(div);
+    total++;
+    stake += b.stake;
+
+    if (b.result === "win") {
+      wins++;
+      returns += b.payout;
+    }
+
+    curve.push(b.payout - b.stake);
+  });
+
+  const roi = stake ? ((returns - stake) / stake) * 100 : 0;
+  const winRate = total ? (wins / total) * 100 : 0;
+
+  renderPerformance(roi, winRate, stake, returns);
+  renderChart(curve);
+  renderSignals(snap);
+}
+
+// ================= PERFORMANCE =================
+function renderPerformance(roi, winRate, stake, returns) {
+  document.getElementById("performanceSection").innerHTML = `
+    <h3>Performance</h3>
+    ROI: ${roi.toFixed(2)}%<br>
+    Win Rate: ${winRate.toFixed(2)}%<br>
+    Stake: $${stake}<br>
+    Return: $${returns}
+  `;
+}
+
+// ================= CHART =================
+function renderChart(curve) {
+  const ctx = document.getElementById("roiChart");
+
+  let sum = 0;
+  const cumulative = curve.map(v => (sum += v));
+
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: cumulative.map((_, i) => i + 1),
+      datasets: [{ label: "Profit", data: cumulative }]
+    }
   });
 }
 
-// ================= ADMIN DASHBOARD =================
-async function loadAdminStats() {
-  const snap = await getDocs(collection(db, "bets"));
+// ================= SIGNALS =================
+function renderSignals(snap) {
+  let sharp = 0;
+  let publicBets = 0;
 
-  let totalBets = 0;
-  let totalStake = 0;
+  snap.forEach(d => {
+    const b = d.data();
 
-  snap.forEach(doc => {
-    const bet = doc.data();
-    totalBets++;
-    totalStake += bet.stake;
+    let implied = 0;
+    b.selectedHorses.forEach(h => {
+      const o = parseFloat(b.odds[h]);
+      implied += 1 / (o + 1);
+    });
+
+    if (implied < 0.5) sharp++;
+    else publicBets++;
   });
 
-  const section = document.getElementById("adminSection");
-
-  section.innerHTML = `
-    <h3>Admin Analytics</h3>
-    Total Bets: ${totalBets}<br>
-    Total Stake: $${totalStake}
+  document.getElementById("performanceSection").innerHTML += `
+    <h4>Market Signals</h4>
+    Sharp: ${sharp}<br>
+    Public: ${publicBets}
   `;
 }
