@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Initialization Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .log {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin: 10px 0;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .log-item {
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .log-item:last-child {
+      border-bottom: none;
+    }
+    .error {
+      color: #c00;
+      font-weight: bold;
+    }
+    .success {
+      color: #0a0;
+      font-weight: bold;
+    }
+    .info {
+      color: #00c;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 5px 10px 0;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <h1>Firebase Initialization Diagnostic</h1>
+  
+  <div>
+    <button onclick="checkCDN()">Test CDN Access</button>
+    <button onclick="testImports()">Test Module Imports</button>
+    <button onclick="location.reload()">Reload Page</button>
+  </div>
+
+  <h2>Initialization Log:</h2>
+  <div class="log" id="log"></div>
+
+  <h2>Firebase Status:</h2>
+  <div id="status">Initializing...</div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+
+    function addLog(message, type = 'info') {
+      console.log(message);
+      const item = document.createElement('div');
+      item.className = `log-item ${type}`;
+      item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(item);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function checkCDN() {
+      addLog('Testing Firebase CDN access...', 'info');
+      
+      const urls = [
+        'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js',
+        'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js',
+        'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js'
+      ];
+
+      urls.forEach(url => {
+        fetch(url, { method: 'HEAD' })
+          .then(response => {
+            if (response.ok) {
+              addLog(`✓ CDN accessible: ${url}`, 'success');
+            } else {
+              addLog(`✗ CDN returned ${response.status}: ${url}`, 'error');
+            }
+          })
+          .catch(err => {
+            addLog(`✗ CDN error: ${err.message}`, 'error');
+          });
+      });
+    }
+
+    function testImports() {
+      addLog('Testing Firebase module imports...', 'info');
+      
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js')
+        .then(() => addLog('✓ firebase-app.js loaded', 'success'))
+        .catch(err => addLog(`✗ firebase-app.js error: ${err.message}`, 'error'));
+      
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js')
+        .then(() => addLog('✓ firebase-auth.js loaded', 'success'))
+        .catch(err => addLog(`✗ firebase-auth.js error: ${err.message}`, 'error'));
+      
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
+        .then(() => addLog('✓ firebase-firestore.js loaded', 'success'))
+        .catch(err => addLog(`✗ firebase-firestore.js error: ${err.message}`, 'error'));
+    }
+
+    // Test dashboard Firebase import
+    addLog('Loading firebase.js from dashboard...', 'info');
+
+    import('./firebase.js')
+      .then(firebaseModule => {
+        addLog('✓ firebase.js imported successfully', 'success');
+        
+        const { db, auth, initError } = firebaseModule;
+        
+        if (initError) {
+          addLog(`✗ Firebase init error: ${initError.message}`, 'error');
+          statusEl.innerHTML = `<span class="error">❌ Firebase initialization failed</span><br/><code>${initError.message}</code>`;
+        } else if (!db) {
+          addLog('✗ Firestore db is null or undefined', 'error');
+          statusEl.innerHTML = '<span class="error">❌ Firestore db not available</span>';
+        } else if (typeof db.collection !== 'function') {
+          addLog(`✗ db.collection is not a function (type: ${typeof db.collection})`, 'error');
+          statusEl.innerHTML = '<span class="error">❌ db.collection is not a function</span>';
+        } else {
+          addLog('✓ Firestore db.collection is available', 'success');
+          addLog(`✓ Auth instance: ${auth ? 'available' : 'null'}`, 'success');
+          statusEl.innerHTML = '<span class="success">✓✓✓ Firebase is ready!</span>';
+        }
+      })
+      .catch(err => {
+        addLog(`✗ Failed to import firebase.js: ${err.message}`, 'error');
+        statusEl.innerHTML = `<span class="error">❌ Import failed: ${err.message}</span>`;
+        console.error('Stack:', err.stack);
+      });
+  </script>
+</body>
+</html>
