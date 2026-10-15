@@ -15,6 +15,8 @@
 
   <!-- Your main logic -->
   <script defer src="app.js"></script>
+  <!-- Today's Card (paper betting): racecards + runners, feeds the calculator -->
+  <script defer src="racecard.js"></script>
 </head>
 
 <body>
@@ -35,6 +37,33 @@
   <div class="checkers" aria-hidden="true"></div>
 
   <main class="wrap">
+    <section class="racecard-card">
+      <div class="section-head">
+        <h2>🏇 Today's Card — Paper Betting</h2>
+        <span class="paper-note">Paper bets only. No real money.</span>
+      </div>
+      <p class="racecard-intro">Pick a real track and race, then send a real runner into the calculator to practice a bet.</p>
+      <div id="racecardDemoBanner" class="racecard-demo-banner" style="display:none;">
+        DEMO CARD — sample data with fictional names. Add your RapidAPI key (see RACECARD_SETUP.md) to see today's real cards.
+      </div>
+      <div class="racecard-controls">
+        <label>
+          Date
+          <input type="date" id="racecardDate" />
+        </label>
+        <label>
+          Track
+          <select id="racecardTrack">
+            <option value="all">All tracks</option>
+          </select>
+        </label>
+        <button type="button" id="racecardLoadBtn">Load Card</button>
+      </div>
+      <p id="racecardStatus" class="racecard-status">Loading today's card…</p>
+      <div id="racecardRaces" class="racecard-races"></div>
+      <div id="racecardRunners" class="racecard-runners"></div>
+    </section>
+
     <div class="calc-grid">
       <section class="bet-card">
         <h2>Place Your Bet</h2>

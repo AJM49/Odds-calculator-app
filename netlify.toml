@@ -1,0 +1,5 @@
+[build]
+  # No build step: the site is plain static files served from the repo root.
+  # This section only wires up the Netlify Functions used by the
+  # "Today's Card" racecard proxy (netlify/functions/racecards.js).
+  functions = "netlify/functions"

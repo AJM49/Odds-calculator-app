@@ -357,3 +357,212 @@ tbody tr:hover { background: rgba(255, 199, 0, 0.05); }
   #loadHistoryBtn { width: 100%; }
   .auth-page .auth-card { padding: 26px 20px; }
 }
+
+/* ---------------- Today's Card (paper betting) ---------------- */
+
+.racecard-card {
+  background: var(--card, #123324);
+  border: 1px solid rgba(255, 199, 0, 0.35);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.racecard-card h2 {
+  color: var(--gold);
+  margin: 0;
+}
+
+.paper-note {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.racecard-intro {
+  margin: 10px 0 14px;
+  opacity: 0.9;
+}
+
+.racecard-demo-banner {
+  background: #3a2a00;
+  border: 1px solid var(--gold);
+  color: #ffe9a3;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0 0 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.racecard-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.racecard-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.racecard-controls input,
+.racecard-controls select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #0a1a11;
+  color: #fff;
+  font-size: 1rem;
+}
+
+#racecardLoadBtn {
+  background: var(--gold);
+  color: #1a1200;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#racecardLoadBtn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.racecard-status {
+  margin: 14px 0 10px;
+  min-height: 1.4em;
+}
+
+.racecard-status.racecard-error {
+  color: #ff8a80;
+}
+
+.racecard-races {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.racecard-course {
+  width: 100%;
+  color: var(--gold);
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 10px;
+}
+
+.racecard-race-btn {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.racecard-race-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.racecard-race-btn.selected {
+  background: var(--gold);
+  color: #1a1200;
+  border-color: var(--gold);
+  font-weight: 800;
+}
+
+.racecard-race-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.racecard-runners {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.racecard-race-title {
+  color: var(--gold);
+  margin: 0 0 10px;
+}
+
+.racecard-empty {
+  opacity: 0.85;
+  margin: 8px 0;
+}
+
+.racecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.racecard-table th {
+  background: #0a1a11;
+  color: var(--gold);
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 8px;
+}
+
+.racecard-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.racecard-table tr.scratched td {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.racecard-table tr.scratched td:last-child {
+  text-decoration: none;
+}
+
+.racecard-use-btn {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.racecard-use-btn:hover {
+  background: var(--gold);
+  color: #1a1200;
+}
+
+.racecard-use-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 640px) {
+  .racecard-card {
+    padding: 18px 16px;
+  }
+  .racecard-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
