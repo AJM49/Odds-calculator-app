@@ -11,7 +11,10 @@
 //       age, finished, canceled, offtime}]
 //   GET /race/{id_race} -> {id_race, course, ..., horses: [{horse, id_horse,
 //       jockey, trainer, age, weight, number, non_runner, form, position,
-//       distance_beaten, odds, poolData}]}
+//       distance_beaten, sp, odds, poolData}]}
+//       NOTE: `odds` is an object { each_way: [...], winner: [...] }, NOT a
+//       string — see extractOddsString. `sp` is the starting price. Age may
+//       come back as 0 when unknown — shown as blank, not 0.
 // The API exposes no explicit race number, so Race N is the race's order
 // on its course's card (sorted by id_race, which follows card order).
 
@@ -48,6 +51,61 @@
     const decimal = Number(raw);
     if (!Number.isFinite(decimal) || decimal <= 1) return null;
     return decimal;
+  }
+
+  // Extract a displayable odds string from the API's `odds` field.
+  // Per the provider's own sample data, `odds` is NOT a string — it is an
+  // object: { each_way: [...], winner: [...] }, where each array holds
+  // bookmaker price entries when present (empty in the sample). `sp`
+  // (starting price) is a separate field that may hold the price on
+  // finished races. Returns "" when no price is available (the UI shows
+  // "—" and leaves the calculator odds blank for manual entry).
+  function extractOddsString(oddsValue, spValue) {
+    const fromEntry = (entry) => {
+      if (entry === null || entry === undefined) return "";
+      if (typeof entry === "string" || typeof entry === "number") return String(entry).trim();
+      if (typeof entry === "object") {
+        for (const key of ["fractional", "decimal", "price", "odds", "value", "sp", "display"]) {
+          const v = entry[key];
+          if (typeof v === "string" || typeof v === "number") {
+            const s = String(v).trim();
+            if (s) return s;
+          }
+        }
+      }
+      return "";
+    };
+    if (typeof oddsValue === "string" || typeof oddsValue === "number") {
+      const s = String(oddsValue).trim();
+      if (s) return s;
+    }
+    if (oddsValue && typeof oddsValue === "object") {
+      for (const key of ["winner", "each_way"]) {
+        const arr = oddsValue[key];
+        if (Array.isArray(arr)) {
+          for (const entry of arr) {
+            const s = fromEntry(entry);
+            if (s) return s;
+          }
+        }
+      }
+      const direct = fromEntry(oddsValue);
+      if (direct) return direct;
+    }
+    if (typeof spValue === "string" || typeof spValue === "number") {
+      return String(spValue).trim();
+    }
+    return "";
+  }
+
+  // The live feed returns age 0 for runners whose age is unknown — show
+  // blank ("—") rather than a bogus 0.
+  function cleanAge(ageValue) {
+    if (ageValue === null || ageValue === undefined) return "";
+    if (typeof ageValue === "object") return "";
+    const s = String(ageValue).trim();
+    if (s === "" || s === "0") return "";
+    return s;
   }
 
   function isScratched(nonRunner) {
@@ -101,10 +159,12 @@
         horse: toText(h.horse),
         jockey: toText(h.jockey),
         trainer: toText(h.trainer),
-        age: toText(h.age),
+        age: cleanAge(h.age),
         weight: toText(h.weight),
         form: toText(h.form),
-        odds: toText(h.odds),
+        odds: extractOddsString(h.odds, h.sp),
+        sp: toText(h.sp),
+        beaten: toText(h.distance_beaten),
         position: toText(h.position),
         scratched: isScratched(h.non_runner),
       }))
@@ -122,6 +182,60 @@
       },
       horses,
     };
+  }
+
+  // The provider puts the post time inside the `date` string, e.g.
+  // "2026-10-15 13:30 (UTC-4)". Pull it out as "1:30 PM (UTC-4)".
+  // `offtime` exists but was empty in the provider's sample data, so the
+  // date string is the reliable source. Returns "" when no time is found.
+  function parseRaceTime(dateStr) {
+    const raw = toText(dateStr);
+    if (!raw) return "";
+    const timeMatch = raw.match(/(\d{1,2}):(\d{2})/);
+    if (!timeMatch) return "";
+    let hour = Number(timeMatch[1]);
+    const minute = timeMatch[2];
+    const suffix = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    const tzMatch = raw.match(/\(([^)]+)\)/);
+    const tz = tzMatch ? ` (${tzMatch[1]})` : "";
+    return `${hour}:${minute} ${suffix}${tz}`;
+  }
+
+  // Prefer the `offtime` field when populated, else parse the date string.
+  function raceTime(race) {
+    if (!race) return "";
+    if (toText(race.offtime)) return toText(race.offtime);
+    return parseRaceTime(race.date);
+  }
+
+  // Remember the last race the user opened, so the dashboard's Race Detail
+  // panel can render it. Best-effort: failures (private mode, quota) just
+  // leave the panel empty.
+  const LAST_RACE_KEY = "racecard_last_race";
+  function saveLastRace(race, horses) {
+    try {
+      if (typeof localStorage === "undefined") return;
+      localStorage.setItem(LAST_RACE_KEY, JSON.stringify({
+        savedAt: new Date().toISOString(),
+        mode: state.mode,
+        race: {
+          id: race?.id ?? null,
+          course: race?.course || "",
+          date: race?.date || "",
+          distance: race?.distance || "",
+          age: race?.age || "",
+          offtime: race?.offtime || "",
+          finished: !!race?.finished,
+          canceled: !!race?.canceled,
+          raceNo: race?.raceNo ?? null,
+        },
+        horses: Array.isArray(horses) ? horses : [],
+      }));
+    } catch (_) {
+      // Ignore — dashboard panel just stays empty.
+    }
   }
 
   /* ---------------- Demo card (fictional names, clearly labeled) ---------------- */
@@ -364,6 +478,7 @@
     }
     if (state.mode === "demo") {
       state.detail = DEMO_DETAILS[String(race.id)] || { race, horses: [] };
+      saveLastRace(state.detail.race, state.detail.horses);
       renderRunners();
       return;
     }
@@ -374,6 +489,7 @@
       // Keep the card's raceNo for the title by merging with the card race.
       detail.race = { ...race, ...detail.race, id: race.id, course: race.course };
       state.detail = detail;
+      saveLastRace(detail.race, detail.horses);
       renderRunners();
     } catch (err) {
       console.error(err);
@@ -475,11 +591,28 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = {
       oddsToDecimal,
+      extractOddsString,
+      cleanAge,
+      parseRaceTime,
+      raceTime,
       isScratched,
       normalizeRacecards,
       normalizeRaceDetail,
       DEMO_RACES,
       DEMO_DETAILS,
+    };
+  }
+
+  // Expose helpers to dashboard-race.js (same page family, no bundler).
+  if (typeof window !== "undefined") {
+    window.RacecardUtils = {
+      oddsToDecimal,
+      extractOddsString,
+      cleanAge,
+      parseRaceTime,
+      raceTime,
+      normalizeRacecards,
+      normalizeRaceDetail,
     };
   }
 })();

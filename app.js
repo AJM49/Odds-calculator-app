@@ -29,7 +29,6 @@ const calculateBtn = document.getElementById("calculateBtn");
 const fetchPayoutApiBtn = document.getElementById("fetchPayoutApiBtn");
 const submitBetBtn = document.getElementById("submitBetBtn");
 const shareBtn = document.getElementById("shareBtn");
-const fetchPayoutBtn = document.getElementById("fetchPayoutBtn");
 const loadHistoryBtn = document.getElementById("loadHistoryBtn");
 
 const trackInput = document.getElementById("trackName");
@@ -113,9 +112,6 @@ const BET_TYPE_CONFIG = {
   pick5: { legs: 5, profitFactor: 1 },
   pick6: { legs: 6, profitFactor: 1 },
 };
-const LIVE_ODDS_SPORT_KEY = "racing_horse";
-const LIVE_ODDS_API_ROOT = "https://api.the-odds-api.com/v4/sports";
-const LIVE_ODDS_KEY_STORAGE = "live_odds_api_key";
 const PAYOUT_API_URL_STORAGE = "payout_api_url";
 const PAYOUT_API_TOKEN_STORAGE = "payout_api_token";
 const MAX_BET_AMOUNT = 1_000_000;
@@ -366,103 +362,6 @@ async function fetchPayoutFromApi(input) {
   }
 
   return { payout, payload };
-}
-
-function promptForLiveOddsApiKey() {
-  const existing = localStorage.getItem(LIVE_ODDS_KEY_STORAGE) || "";
-  const input = window.prompt(
-    "Enter your The Odds API key (stored in this browser only).",
-    existing
-  );
-
-  if (!input) return null;
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-
-  localStorage.setItem(LIVE_ODDS_KEY_STORAGE, trimmed);
-  return trimmed;
-}
-
-function getLiveOddsApiKey() {
-  return localStorage.getItem(LIVE_ODDS_KEY_STORAGE) || "";
-}
-
-function parseOutcomePrice(outcome) {
-  const rawPrice = outcome?.price;
-  const n = Number(rawPrice);
-  return Number.isFinite(n) ? n : null;
-}
-
-function findBestDecimalPrice(events, horseName) {
-  const target = horseName.trim().toLowerCase();
-  if (!target) return null;
-
-  let best = null;
-  let matchedEvent = null;
-  let matchedBookmaker = null;
-
-  for (const event of events || []) {
-    for (const bookmaker of event?.bookmakers || []) {
-      for (const market of bookmaker?.markets || []) {
-        for (const outcome of market?.outcomes || []) {
-          if ((outcome?.name || "").trim().toLowerCase() !== target) continue;
-
-          const decimalPrice = parseOutcomePrice(outcome);
-          if (!decimalPrice || decimalPrice <= 1) continue;
-
-          if (best === null || decimalPrice > best) {
-            best = decimalPrice;
-            matchedEvent = event;
-            matchedBookmaker = bookmaker;
-          }
-        }
-      }
-    }
-  }
-
-  if (best === null) return null;
-
-  return {
-    decimalPrice: best,
-    eventName: matchedEvent?.home_team && matchedEvent?.away_team
-      ? `${matchedEvent.home_team} vs ${matchedEvent.away_team}`
-      : matchedEvent?.commence_time || "Unknown event",
-    bookmakerName: matchedBookmaker?.title || "Unknown bookmaker"
-  };
-}
-
-async function fetchLiveOddsForHorse(horseName) {
-  let apiKey = getLiveOddsApiKey();
-  if (!apiKey) {
-    apiKey = promptForLiveOddsApiKey();
-  }
-  if (!apiKey) {
-    throw new Error("Live odds API key is required.");
-  }
-
-  const url = new URL(`${LIVE_ODDS_API_ROOT}/${LIVE_ODDS_SPORT_KEY}/odds`);
-  url.searchParams.set("apiKey", apiKey);
-  url.searchParams.set("regions", "us");
-  url.searchParams.set("markets", "h2h");
-  url.searchParams.set("oddsFormat", "decimal");
-  url.searchParams.set("dateFormat", "iso");
-
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
-      localStorage.removeItem(LIVE_ODDS_KEY_STORAGE);
-      throw new Error("Invalid API key. Please retry and enter a valid key.");
-    }
-    throw new Error(`Live odds request failed (${response.status}).`);
-  }
-
-  const events = await response.json();
-  const bestPrice = findBestDecimalPrice(events, horseName);
-  if (!bestPrice) {
-    throw new Error(`No live odds found for "${horseName}".`);
-  }
-
-  return bestPrice;
 }
 
 /* ------------------------------------
@@ -821,45 +720,6 @@ if (shareBtn) {
 
   });
 
-}
-
-if (fetchPayoutBtn) {
-  fetchPayoutBtn.addEventListener("click", async () => {
-    const { horseName, betAmount, betType } = getBetFormValues();
-
-    if (!isValidTextInput(horseName)) {
-      setResultMessage(`Enter a valid horse name (1-${MAX_TEXT_INPUT_LENGTH} chars) first to fetch live odds.`);
-      return;
-    }
-
-    setResultMessage("Fetching live odds...");
-
-    await runWithButtonDisabled(fetchPayoutBtn, async () => {
-      try {
-        const liveOdds = await fetchLiveOddsForHorse(horseName);
-        oddsInput.value = String(liveOdds.decimalPrice.toFixed(2));
-
-        if (isValidBetAmount(betAmount) && isSupportedBetType(betType)) {
-          const payout = calculateOdds(betAmount, oddsInput.value, betType);
-          if (payout !== null) {
-            calculatedPayout = payout;
-            setResultMessage(
-              `Live odds loaded (${liveOdds.bookmakerName}): ${oddsInput.value}. ` +
-              `Potential Payout: $${calculatedPayout.toFixed(2)}`
-            );
-            return;
-          }
-        }
-
-        setResultMessage(
-          `Live odds loaded (${liveOdds.bookmakerName}): ${oddsInput.value}. Click Calculate for payout.`
-        );
-      } catch (error) {
-        console.error(error);
-        setResultMessage(error.message || "Unable to fetch live odds.");
-      }
-    });
-  });
 }
 
 if (loadHistoryBtn) {

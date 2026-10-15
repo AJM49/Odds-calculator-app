@@ -247,3 +247,126 @@ tbody tr:hover {
     font-size: 0.9rem;
   }
 }
+
+/* ---------------- Race Detail panel (Today's Card data) ---------------- */
+
+.race-detail-card {
+  margin-top: 20px;
+}
+
+.race-detail-card .table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#saveResultBtn {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#saveResultBtn:hover {
+  background: var(--gold);
+  color: #1a1200;
+}
+
+#saveResultBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.race-detail-status {
+  margin: 12px 0 10px;
+  opacity: 0.9;
+}
+
+.race-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.race-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #0a1a11;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.race-fact span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.race-fact strong {
+  color: var(--gold);
+  font-size: 1.05rem;
+}
+
+.race-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+}
+
+.race-detail-table th {
+  background: #0a1a11;
+  color: var(--gold);
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 8px;
+}
+
+.race-detail-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.race-detail-table tr.scratched td {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.past-winners-title {
+  color: var(--gold);
+  margin: 22px 0 6px;
+}
+
+.past-winners-note {
+  opacity: 0.85;
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+
+.past-winners {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.past-winners li {
+  background: #0a1a11;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.past-winners li span {
+  opacity: 0.85;
+}

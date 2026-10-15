@@ -63,6 +63,21 @@ Netlify Functions only run on the deployed site. Opening `index.html` from
 your computer shows the **demo card** (expected — there is no function to
 call from `file://`).
 
+## Dashboard: Race Detail + Past Winners
+
+The dashboard (`dashboard.html`) shows a **Race Detail** panel for the last
+race opened on Today's Card — every field the provider supplies: track,
+race number, post time (parsed from the `date` string, since `offtime` is
+often empty), distance, age condition, status, and the full runners table
+(horse, jockey, trainer, age, weight, form, odds, SP, finish, beaten
+distance). Track condition is NOT shown — the provider has no field for it.
+
+**Past Winners** is built locally, not from the provider (no endpoint for
+all-time past winners of a race exists). **Save This Race's Result** fetches
+the displayed race's detail and stores the winner (position "1") in the
+browser's localStorage. History starts empty and grows as results are saved
+after race days. It is per-browser storage, not shared across devices.
+
 ## What the API returns (for future work)
 
 - `GET /racecards?date=YYYY-MM-DD` → races: `id_race, course, date,
@@ -80,9 +95,13 @@ call from `file://`).
 - US racing is pari-mutuel: the odds shown are a snapshot, and the final
   payout depends on the closing pool. The calculator's number is an
   **estimate** until the race is official.
-- The odds string format from the API is not documented; the app converts
-  fractional/decimal/American formats and leaves anything else blank for
-  manual entry.
+- The API's `odds` field is an object `{ each_way: [...], winner: [...] }`
+  of bookmaker price entries (often empty — the provider's own sample data
+  shows empty arrays), with `sp` (starting price) as a separate field. The
+  app extracts the first usable price, falls back to `sp`, and leaves the
+  odds blank for manual entry when no price is available. Pre-race cards
+  frequently carry no usable odds — that is a data gap in the feed, not a
+  bug in the app.
 - This API is a RapidAPI marketplace listing, not Equibase-official data.
   Fine for a prototype/education tool — verify licensing before any
   commercial use.

@@ -58,6 +58,19 @@
       </div>
     </section>
 
+    <!-- Race Detail: full provider fields for the last race opened on Today's Card -->
+    <section class="table-card race-detail-card">
+      <div class="table-head">
+        <h2>Race Detail</h2>
+        <button id="saveResultBtn" type="button">Save This Race's Result</button>
+      </div>
+      <p id="raceDetailStatus" class="race-detail-status">Loading race detail…</p>
+      <div id="raceDetailPanel"></div>
+      <h3 class="past-winners-title">Past Winners of This Race</h3>
+      <p class="past-winners-note">Winners accumulate as you save results after race days. There is no provider endpoint for all-time past winners — this history is built from saved results.</p>
+      <div id="pastWinnersList"></div>
+    </section>
+
     <!-- Recent bets table with empty state when user has no history -->
     <section class="table-card">
       <div class="table-head">
@@ -110,6 +123,10 @@
 
   <!-- Dashboard Logic -->
   <script src="dashboard.js"></script>
+
+  <!-- Race Detail panel (reads last race from Today's Card; shares helpers) -->
+  <script src="racecard.js"></script>
+  <script src="dashboard-race.js"></script>
 
 </body>
 </html>
