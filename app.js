@@ -660,12 +660,23 @@ async function loadBetHistory() {
   historySection.innerHTML = "Loading...";
 
   try {
-
-    const snapshot = await db
-      .collection("bets")
-      .where("userId", "==", user.uid)
-      .limit(50)
-      .get();
+    let snapshot;
+    try {
+      snapshot = await db
+        .collection("bets")
+        .where("userId", "==", user.uid)
+        // Query newest-first so limit(50) returns the most recent bets.
+        .orderBy("createdAtMs", "desc")
+        .limit(50)
+        .get();
+    } catch (orderError) {
+      console.warn("Falling back to unordered history query.", orderError);
+      snapshot = await db
+        .collection("bets")
+        .where("userId", "==", user.uid)
+        .limit(50)
+        .get();
+    }
     const bets = [];
     snapshot.forEach((doc) => bets.push(doc.data()));
     renderBetHistory(bets);
@@ -708,34 +719,42 @@ function renderBetHistory(bets) {
     .sort((a, b) => getBetSortTime(b) - getBetSortTime(a))
     .slice(0, 10);
 
-  let html = "";
+  historySection.innerHTML = "";
+
   sorted.forEach((bet) => {
-    html += `
-      <div class=\"bet-row\">
-        <strong>${bet.trackName || "Unknown Track"}</strong>
-        Race ${bet.raceNumber || "—"}
-        <br>
+    // Use DOM APIs/textContent to prevent injection from stored free-text fields.
+    const row = document.createElement("div");
+    row.className = "bet-row";
 
-        Horse: ${bet.horseName || "—"}
-        <br>
+    const trackStrong = document.createElement("strong");
+    trackStrong.textContent = bet.trackName || "Unknown Track";
+    row.appendChild(trackStrong);
+    row.appendChild(document.createTextNode(` Race ${bet.raceNumber || "—"}`));
+    row.appendChild(document.createElement("br"));
 
-        Bet: $${Number(bet.betAmount || 0).toFixed(2)}
-        Odds: ${bet.odds || "—"}
-        <br>
+    row.appendChild(document.createTextNode(`Horse: ${bet.horseName || "—"}`));
+    row.appendChild(document.createElement("br"));
 
-        Outcome: ${bet.outcome || "pending"}
-        <br>
+    row.appendChild(
+      document.createTextNode(
+        `Bet: $${Number(bet.betAmount || 0).toFixed(2)} Odds: ${bet.odds || "—"}`
+      )
+    );
+    row.appendChild(document.createElement("br"));
 
-        Winnings: $${Number(bet.winnings || 0).toFixed(2)}
-        <br>
+    row.appendChild(document.createTextNode(`Outcome: ${bet.outcome || "pending"}`));
+    row.appendChild(document.createElement("br"));
 
-        Time: ${formatBetTime(bet)}
-      </div>
-      <hr>
-    `;
+    row.appendChild(
+      document.createTextNode(`Winnings: $${Number(bet.winnings || 0).toFixed(2)}`)
+    );
+    row.appendChild(document.createElement("br"));
+
+    row.appendChild(document.createTextNode(`Time: ${formatBetTime(bet)}`));
+
+    historySection.appendChild(row);
+    historySection.appendChild(document.createElement("hr"));
   });
-
-  historySection.innerHTML = html;
 }
 
 function startBetHistoryTracking(userId) {
@@ -747,21 +766,35 @@ function startBetHistoryTracking(userId) {
 
   historySection.innerHTML = "Tracking live bet history...";
 
+  const onSnapshotSuccess = (snapshot) => {
+    const bets = [];
+    snapshot.forEach((doc) => bets.push(doc.data()));
+    renderBetHistory(bets);
+  };
+
+  const onSnapshotError = (error) => {
+    console.error(error);
+    historySection.innerHTML = "Error tracking history. Tap Load Bet History to retry.";
+  };
+
   unsubscribeHistory = db
     .collection("bets")
     .where("userId", "==", userId)
+    // Keep live feed in newest-first order for a stable UX.
+    .orderBy("createdAtMs", "desc")
     .limit(50)
-    .onSnapshot(
-      (snapshot) => {
-        const bets = [];
-        snapshot.forEach((doc) => bets.push(doc.data()));
-        renderBetHistory(bets);
-      },
-      (error) => {
-        console.error(error);
-        historySection.innerHTML = "Error tracking history. Tap Load Bet History to retry.";
+    .onSnapshot(onSnapshotSuccess, (error) => {
+      console.warn("Falling back to unordered live history query.", error);
+      if (typeof unsubscribeHistory === "function") {
+        unsubscribeHistory();
       }
-    );
+
+      unsubscribeHistory = db
+        .collection("bets")
+        .where("userId", "==", userId)
+        .limit(50)
+        .onSnapshot(onSnapshotSuccess, onSnapshotError);
+    });
 }
 
 /* ------------------------------------

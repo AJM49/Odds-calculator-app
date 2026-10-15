@@ -184,14 +184,32 @@ function renderBetsTable(bets) {
     const tr = document.createElement("tr");
     const outcome = bet.outcome || "pending";
 
-    tr.innerHTML = `
-      <td>${bet.horseName || "—"}</td>
-      <td>${bet.trackName || "—"}</td>
-      <td>${bet.betType || "—"}</td>
-      <td>${toCurrency(bet.betAmount)}</td>
-      <td class="result-${outcome}">${outcome}</td>
-      <td>${toCurrency(bet.winnings)}</td>
-    `;
+    // Build cells with textContent to avoid rendering unsanitized HTML from stored data.
+    const horseCell = document.createElement("td");
+    horseCell.textContent = bet.horseName || "—";
+
+    const trackCell = document.createElement("td");
+    trackCell.textContent = bet.trackName || "—";
+
+    const typeCell = document.createElement("td");
+    typeCell.textContent = bet.betType || "—";
+
+    const amountCell = document.createElement("td");
+    amountCell.textContent = toCurrency(bet.betAmount);
+
+    const outcomeCell = document.createElement("td");
+    outcomeCell.className = `result-${outcome}`;
+    outcomeCell.textContent = outcome;
+
+    const winningsCell = document.createElement("td");
+    winningsCell.textContent = toCurrency(bet.winnings);
+
+    tr.appendChild(horseCell);
+    tr.appendChild(trackCell);
+    tr.appendChild(typeCell);
+    tr.appendChild(amountCell);
+    tr.appendChild(outcomeCell);
+    tr.appendChild(winningsCell);
 
     ui.tableBody.appendChild(tr);
   });

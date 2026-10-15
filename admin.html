@@ -94,13 +94,36 @@
       snapshot.forEach(doc => {
         const data = doc.data();
         const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${data.email}</td>
-          <td>${data.role || 'user'}</td>
-          <td><button onclick="deleteUser('${doc.id}')">Delete</button></td>
-        `;
+
+        // Render user-provided data with textContent to avoid HTML injection.
+        const emailCell = document.createElement('td');
+        emailCell.textContent = data.email || '—';
+
+        const roleCell = document.createElement('td');
+        roleCell.textContent = data.role || 'user';
+
+        const actionsCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', () => deleteUser(doc.id));
+        actionsCell.appendChild(deleteButton);
+
+        row.appendChild(emailCell);
+        row.appendChild(roleCell);
+        row.appendChild(actionsCell);
         tbody.appendChild(row);
       });
+    }
+
+    function formatTimestamp(value) {
+      if (!value || typeof value.toDate !== 'function') {
+        return 'Time pending';
+      }
+      const date = value.toDate();
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return 'Time pending';
+      }
+      return date.toLocaleString();
     }
 
     async function loadBets() {
@@ -113,14 +136,35 @@
         const data = doc.data();
         totalWagered += parseFloat(data.betAmount || 0);
         const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${data.userId}</td>
-          <td>${data.betType}</td>
-          <td>$${parseFloat(data.betAmount || 0).toFixed(2)}</td>
-          <td>${data.odds}</td>
-          <td>${new Date(data.timestamp?.toDate()).toLocaleString()}</td>
-          <td><button onclick="deleteBet('${doc.id}')">Delete</button></td>
-        `;
+
+        // Render each cell safely instead of template HTML injection.
+        const userIdCell = document.createElement('td');
+        userIdCell.textContent = data.userId || '—';
+
+        const betTypeCell = document.createElement('td');
+        betTypeCell.textContent = data.betType || '—';
+
+        const amountCell = document.createElement('td');
+        amountCell.textContent = `$${parseFloat(data.betAmount || 0).toFixed(2)}`;
+
+        const oddsCell = document.createElement('td');
+        oddsCell.textContent = data.odds || '—';
+
+        const timestampCell = document.createElement('td');
+        timestampCell.textContent = formatTimestamp(data.timestamp);
+
+        const actionsCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', () => deleteBet(doc.id));
+        actionsCell.appendChild(deleteButton);
+
+        row.appendChild(userIdCell);
+        row.appendChild(betTypeCell);
+        row.appendChild(amountCell);
+        row.appendChild(oddsCell);
+        row.appendChild(timestampCell);
+        row.appendChild(actionsCell);
         tbody.appendChild(row);
       });
       document.getElementById('totalWagered').textContent = `$${totalWagered.toFixed(2)}`;

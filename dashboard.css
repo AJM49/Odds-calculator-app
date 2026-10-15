@@ -159,6 +159,7 @@ tbody tr:hover {
 
 .result-win,
 .result-loss,
+.result-lose,
 .result-pending {
   font-weight: 700;
   text-transform: capitalize;
@@ -168,7 +169,8 @@ tbody tr:hover {
   color: #0f9d58;
 }
 
-.result-loss {
+.result-loss,
+.result-lose {
   color: #d93025;
 }
 
