@@ -67,49 +67,72 @@
     <div class="calc-grid">
       <section class="bet-card">
         <h2>Place Your Bet</h2>
+        <p class="bet-card-sub">Paper bet · No real money · 3 quick steps</p>
         <form id="bettingForm">
-          <div class="form-group">
-            <label for="trackName">Track Name</label>
-            <input type="text" id="trackName" placeholder="Track name" />
-          </div>
+          <fieldset class="bet-step">
+            <legend><span class="step-num">1</span> Pick your horse</legend>
+            <p class="step-hint">Tip: pick a runner from Today's Card above and it fills in for you.</p>
+            <div class="form-group">
+              <label for="trackName">Track Name</label>
+              <input type="text" id="trackName" placeholder="Track name" />
+            </div>
 
-          <div class="form-group">
-            <label for="horseName">Horse Name</label>
-            <input type="text" id="horseName" placeholder="Horse name" />
-          </div>
+            <div class="form-group">
+              <label for="horseName">Horse Name</label>
+              <input type="text" id="horseName" placeholder="Horse name" />
+            </div>
 
-          <div class="form-group">
-            <label for="raceNumber">Race Number</label>
-            <input type="number" id="raceNumber" placeholder="Race number" min="1" />
-          </div>
+            <div class="form-group">
+              <label for="raceNumber">Race Number</label>
+              <input type="number" id="raceNumber" placeholder="Race number" min="1" />
+            </div>
+          </fieldset>
 
-          <div class="form-group">
-            <label for="betMode">Bet Mode</label>
-            <select id="betMode">
-              <option value="win">Win</option>
-              <option value="place">Place</option>
-              <option value="show">Show</option>
-              <option value="exacta">Exacta</option>
-              <option value="exacta_box">Exacta Box</option>
-              <option value="trifecta">Trifecta</option>
-              <option value="trifecta_key">Trifecta Key</option>
-              <option value="superfecta">Superfecta</option>
-              <option value="pick3">Pick 3</option>
-              <option value="pick4">Pick 4</option>
-              <option value="pick5">Pick 5</option>
-              <option value="pick6">Pick 6</option>
-            </select>
-          </div>
+          <fieldset class="bet-step">
+            <legend><span class="step-num">2</span> Choose your bet</legend>
+            <div class="form-group">
+              <label for="betMode">Bet Type</label>
+              <select id="betMode">
+                <option value="win">Win</option>
+                <option value="place">Place</option>
+                <option value="show">Show</option>
+                <option value="exacta">Exacta</option>
+                <option value="exacta_box">Exacta Box</option>
+                <option value="trifecta">Trifecta</option>
+                <option value="trifecta_key">Trifecta Key</option>
+                <option value="superfecta">Superfecta</option>
+                <option value="pick3">Pick 3</option>
+                <option value="pick4">Pick 4</option>
+                <option value="pick5">Pick 5</option>
+                <option value="pick6">Pick 6</option>
+              </select>
+            </div>
+            <p id="betModeHelp" class="field-help" aria-live="polite">Your horse must finish 1st. Simplest bet — start here.</p>
+          </fieldset>
 
-          <div class="form-group">
-            <label for="betAmount">Bet Amount (min $0.50)</label>
-            <input type="number" id="betAmount" placeholder="Enter amount (min $0.50)" min="0.5" step="0.01" />
-          </div>
+          <fieldset class="bet-step">
+            <legend><span class="step-num">3</span> Set your stake &amp; odds</legend>
+            <div class="form-group">
+              <label>Quick stake</label>
+              <div class="stake-chips" role="group" aria-label="Quick stake amounts">
+                <button type="button" class="stake-chip" data-amount="2">$2</button>
+                <button type="button" class="stake-chip" data-amount="5">$5</button>
+                <button type="button" class="stake-chip" data-amount="10">$10</button>
+                <button type="button" class="stake-chip" data-amount="20">$20</button>
+              </div>
+            </div>
 
-          <div class="form-group">
-            <label for="oddsInput">Odds (e.g. 5/2)</label>
-            <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" />
-          </div>
+            <div class="form-group">
+              <label for="betAmount">Bet Amount (min $0.50)</label>
+              <input type="number" id="betAmount" placeholder="Enter amount (min $0.50)" min="0.5" step="0.01" />
+            </div>
+
+            <div class="form-group">
+              <label for="oddsInput">Odds (e.g. 5/2)</label>
+              <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" />
+            </div>
+            <p id="oddsHelp" class="field-help" aria-live="polite">Example: 5/2 means a $2 bet wins $5 profit.</p>
+          </fieldset>
 
           <div class="form-group">
             <label>
@@ -131,6 +154,7 @@
         <div class="payout-label">Payout</div>
         <div id="result">Enter your bet to see the payout.</div>
         <p class="payout-note">Your payout updates as soon as you hit Calculate.</p>
+        <p class="payout-how">Payout = your stake back + your winnings. Paper bet — no real money changes hands.</p>
       </aside>
     </div>
 

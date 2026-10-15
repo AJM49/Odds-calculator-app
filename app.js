@@ -727,3 +727,97 @@ if (loadHistoryBtn) {
     loadBetHistory();
   });
 }
+
+/* ------------------------------------
+10. Newbie helpers: bet-type + odds explainers, quick stake chips
+------------------------------------ */
+
+// Plain-English meaning of each bet type (matches BET_TYPE_CONFIG keys).
+const BET_MODE_HELP = {
+  win: "Your horse must finish 1st. Simplest bet — start here.",
+  place: "Your horse must finish 1st or 2nd. Easier to hit, smaller payout.",
+  show: "Your horse must finish 1st, 2nd, or 3rd. Easiest to hit, smallest payout.",
+  exacta: "Pick the 1st AND 2nd finishers, in exact order. Harder — bigger payout.",
+  exacta_box: "Pick two horses to finish 1st and 2nd in either order.",
+  trifecta: "Pick the 1st, 2nd, AND 3rd finishers, in exact order.",
+  trifecta_key: "Pick one horse to win, plus two others to fill 2nd and 3rd in any order.",
+  superfecta: "Pick the 1st, 2nd, 3rd, AND 4th finishers, in exact order.",
+  pick3: "Pick the winners of 3 races in a row.",
+  pick4: "Pick the winners of 4 races in a row.",
+  pick5: "Pick the winners of 5 races in a row.",
+  pick6: "Pick the winners of 6 races in a row.",
+};
+
+const betModeHelp = document.getElementById("betModeHelp");
+const oddsHelp = document.getElementById("oddsHelp");
+const stakeChips = document.querySelectorAll(".stake-chip");
+
+function updateBetModeHelp() {
+  if (betModeHelp && betMode) {
+    betModeHelp.textContent = BET_MODE_HELP[betMode.value] || "";
+  }
+}
+
+function money(value) {
+  return `$${Number(value).toFixed(2)}`;
+}
+
+// Translate the typed odds into plain English, with a live example at the
+// current stake. Fractional ("5/2") gets the classic "every $Y wins $X"
+// line; decimal/American odds get the "every $1 returns $Z" line.
+function updateOddsHelp() {
+  if (!oddsHelp) return;
+  const raw = (oddsInput?.value || "").trim();
+  const stake = parseFloat(betAmountInput?.value);
+
+  const frac = raw.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+  if (frac) {
+    const num = Number(frac[1]);
+    const den = Number(frac[2]);
+    if (den > 0) {
+      let text = `${raw} means: every $${den} you bet wins $${num} profit.`;
+      if (Number.isFinite(stake) && stake > 0) {
+        const profit = (stake * num) / den;
+        text += ` At your ${money(stake)} stake, that's ${money(profit)} profit — ${money(stake + profit)} back total.`;
+      }
+      oddsHelp.textContent = text;
+      return;
+    }
+  }
+
+  const decimal = parseOddsToDecimalMultiplier(raw);
+  if (decimal) {
+    oddsHelp.textContent = `${raw} means: every $1 you bet returns $${decimal.toFixed(2)} total (stake + profit).`;
+    return;
+  }
+
+  oddsHelp.textContent = "Example: 5/2 means a $2 bet wins $5 profit. Type odds like 5/2, 3.50, or +150.";
+}
+
+if (betMode) {
+  betMode.addEventListener("change", updateBetModeHelp);
+  updateBetModeHelp();
+}
+
+if (oddsInput) {
+  oddsInput.addEventListener("input", updateOddsHelp);
+}
+
+if (betAmountInput) {
+  betAmountInput.addEventListener("input", () => {
+    stakeChips.forEach((chip) => {
+      chip.classList.toggle("active", chip.dataset.amount === betAmountInput.value);
+    });
+    updateOddsHelp();
+  });
+}
+
+stakeChips.forEach((chip) => {
+  chip.addEventListener("click", () => {
+    if (betAmountInput) betAmountInput.value = chip.dataset.amount;
+    stakeChips.forEach((other) => other.classList.toggle("active", other === chip));
+    updateOddsHelp();
+  });
+});
+
+updateOddsHelp();
