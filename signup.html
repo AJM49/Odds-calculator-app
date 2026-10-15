@@ -36,6 +36,13 @@
       loginLink.href = `login.html?next=${encodeURIComponent(nextPage)}`;
     }
 
+    function showAuthError(message) {
+      const el = document.getElementById("authError");
+      if (!el) return;
+      el.textContent = message;
+      el.style.display = "block";
+    }
+
     firebase.auth().onAuthStateChanged((user) => {
       if (!user) return;
       const nextPage = getSafeNextPage();
@@ -60,18 +67,39 @@
         window.location.href = nextPage;
       } catch (err) {
         console.error("❌ Sign up error:", err);
-        alert("Sign up failed: " + err.message);
+        showAuthError("Sign up failed: " + err.message);
       }
     }
 
     window.addEventListener("DOMContentLoaded", preserveNextOnAuthLinks);
   </script>
 </head>
-<body>
-  <h2>🐎 Horse Odds Calculator - Sign Up</h2>
-  <input type="email" id="email" placeholder="Email" /><br />
-  <input type="password" id="password" placeholder="Password" /><br />
-  <button onclick="signUp()">Sign Up</button><br />
-  <a id="loginLink" href="login.html">Already have an account? Log in</a>
+<body class="auth-page">
+  <main class="auth-card">
+    <div class="auth-brand">
+      <img src="logo.png" alt="Horse Odds Calculator logo" />
+      <h1>Horse <span>Odds</span></h1>
+      <p class="auth-sub">Create your account and start tracking bets.</p>
+    </div>
+
+    <form id="signupForm" onsubmit="event.preventDefault(); signUp();">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Password (6+ characters)" autocomplete="new-password" required />
+      </div>
+      <div id="authError" class="auth-error"></div>
+      <button type="submit">Sign Up</button>
+    </form>
+
+    <p class="auth-switch">
+      Already have an account?
+      <a id="loginLink" href="login.html">Log in</a>
+    </p>
+    <p class="auth-back"><a href="index.html">← Back to Calculator</a></p>
+  </main>
 </body>
 </html>

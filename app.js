@@ -86,7 +86,7 @@ if (logoutBtn) {
         unsubscribeHistory();
         unsubscribeHistory = null;
       }
-      window.location.href = "login.html?next=index.html";
+      window.location.href = "login.html?next=index.html&loggedout=1";
     });
 
   });

@@ -42,6 +42,21 @@
       signupLink.href = `signup.html?next=${encodeURIComponent(nextPage)}`;
     }
 
+    function showAuthError(message) {
+      const el = document.getElementById("authError");
+      if (!el) return;
+      el.textContent = message;
+      el.style.display = "block";
+    }
+
+    function showLoggedOutMessage() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("loggedout") !== "1") return;
+      const el = document.getElementById("logoutMsg");
+      if (!el) return;
+      el.style.display = "block";
+    }
+
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         redirectAfterLogin();
@@ -58,21 +73,46 @@
         redirectAfterLogin();
       } catch (err) {
         console.error("❌ Login error:", err);
-        alert("Login failed: " + err.message);
+        showAuthError("Login failed: " + err.message);
       }
     }
 
-    window.addEventListener("DOMContentLoaded", preserveNextOnAuthLinks);
+    window.addEventListener("DOMContentLoaded", () => {
+      preserveNextOnAuthLinks();
+      showLoggedOutMessage();
+    });
   </script>
 </head>
-<body>
-  <h2>🐎 Horse Odds Calculator Login</h2>
-  <input type="email" id="email" placeholder="Email" /><br />
-  <input type="password" id="password" placeholder="Password" /><br />
-  <button onclick="login()">Log In</button>
-  <p style="text-align:center;">
-    Need an account?
-    <a id="signupLink" href="signup.html">Sign up</a>
-  </p>
+<body class="auth-page">
+  <main class="auth-card">
+    <div class="auth-brand">
+      <img src="logo.png" alt="Horse Odds Calculator logo" />
+      <h1>Horse <span>Odds</span></h1>
+      <p class="auth-sub">Log in to get back to the track.</p>
+    </div>
+
+    <div id="logoutMsg" class="auth-success" style="display:none;">
+      You've been logged out. See you at the track. 🏇
+    </div>
+
+    <form id="loginForm" onsubmit="event.preventDefault(); login();">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" required />
+      </div>
+      <div id="authError" class="auth-error"></div>
+      <button type="submit">Log In</button>
+    </form>
+
+    <p class="auth-switch">
+      Need an account?
+      <a id="signupLink" href="signup.html">Sign up</a>
+    </p>
+    <p class="auth-back"><a href="index.html">← Back to Calculator</a></p>
+  </main>
 </body>
 </html>

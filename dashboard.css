@@ -1,9 +1,31 @@
+/* ============================================================
+   DASHBOARD — Bold Racetrack theme (matches style.css)
+   Turf green + winner gold + racing red.
+   ============================================================ */
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --bg: #0b1d13;
+  --panel: #12291c;
+  --panel-2: #0e2418;
+  --line: #2c4a35;
+  --gold: #ffc700;
+  --green: #2fbf71;
+  --red: #e8322a;
+  --text: #f4f7f2;
+  --muted: #a7bfae;
+}
+
+* { box-sizing: border-box; }
+
 body {
   margin: 0;
   padding: 16px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(180deg, #eef3fb 0%, #f7f9fc 100%);
-  color: #1f2937;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Main page frame for the upgraded dashboard layout. */
@@ -21,9 +43,12 @@ body {
 }
 
 .topbar-link {
-  color: #3059c9;
-  text-decoration: none;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-decoration: none;
 }
 
 .topbar-link:hover {
@@ -31,33 +56,40 @@ body {
 }
 
 #refreshBtn {
-  background: #3059c9;
-  color: #fff;
-  border: 0;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--gold);
+  color: #1a1200;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
 #refreshBtn:hover {
-  background: #2648a9;
+  background: #ffd94d;
 }
 
 .dashboard-header h1 {
   margin: 0;
-  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 #dashboardSubtitle {
   margin: 6px 0 0;
-  color: #4b5563;
+  color: var(--muted);
 }
 
 .status-line {
   margin: 14px 0;
   font-size: 0.95rem;
-  color: #4b5563;
+  color: var(--muted);
 }
 
 /* Responsive analytics card grid (summary + advanced metrics). */
@@ -68,40 +100,45 @@ body {
 }
 
 .stat-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 14px;
-  box-shadow: 0 6px 22px rgba(17, 24, 39, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .stat-card h2 {
   margin: 0 0 6px;
-  font-size: 0.95rem;
-  color: #4b5563;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .stat-card p {
   margin: 0;
-  font-size: 1.35rem;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 1.6rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--gold);
 }
 
 .metric-positive {
-  color: #0f9d58 !important;
+  color: var(--green) !important;
 }
 
 .metric-negative {
-  color: #d93025 !important;
+  color: var(--red) !important;
 }
 
 .table-card {
   margin-top: 16px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .table-head {
@@ -109,21 +146,25 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 14px 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--line);
 }
 
 .table-head h2 {
   margin: 0;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
   font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
 
 .empty-state {
   margin: 14px 16px 0;
   padding: 12px;
   border-radius: 10px;
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  color: #475569;
+  background: var(--panel-2);
+  border: 1px dashed var(--line);
+  color: var(--muted);
 }
 
 /* History table container uses horizontal scroll on small screens. */
@@ -140,21 +181,22 @@ table {
 th,
 td {
   padding: 12px 14px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--line);
   text-align: left;
   white-space: nowrap;
 }
 
 th {
-  background: #f8fafc;
-  color: #475569;
+  background: #0a1a11;
+  color: var(--gold);
+  font-family: "Oswald", "Arial Narrow", sans-serif;
   font-size: 0.85rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 tbody tr:hover {
-  background-color: #f8fbff;
+  background-color: rgba(255, 199, 0, 0.05);
 }
 
 .result-win,
@@ -166,16 +208,16 @@ tbody tr:hover {
 }
 
 .result-win {
-  color: #0f9d58;
+  color: var(--green);
 }
 
 .result-loss,
 .result-lose {
-  color: #d93025;
+  color: var(--red);
 }
 
 .result-pending {
-  color: #b88904;
+  color: var(--gold);
 }
 
 @media (max-width: 900px) {

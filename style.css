@@ -1,238 +1,359 @@
-/* Updated style.css for Horse Odds Calculator */
+/* ============================================================
+   HORSE ODDS CALCULATOR — Bold Racetrack theme
+   Turf green + winner gold + racing red. Built for the track:
+   big numbers, high contrast, thumb-friendly on a phone.
+   ============================================================ */
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --bg: #0b1d13;
+  --panel: #12291c;
+  --panel-2: #0e2418;
+  --line: #2c4a35;
+  --gold: #ffc700;
+  --gold-dark: #e0a800;
+  --green: #2fbf71;
+  --red: #e8322a;
+  --text: #f4f7f2;
+  --muted: #a7bfae;
+  --input-bg: #0a1a11;
+}
+
+* { box-sizing: border-box; }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f6f8;
-  color: #333;
-  padding: 20px;
   margin: 0;
-  line-height: 1.6;
+  padding: 0;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--gold); }
+a:hover { color: #ffd94d; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: #08170f;
+  border-bottom: 3px solid var(--gold);
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { width: 44px; height: auto; border-radius: 6px; }
+.brand-name {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.brand-name span { color: var(--gold); }
+.brand-tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+#userInfo {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .page-link {
-  display: block;
-  text-align: center;
-  margin-bottom: 12px;
-  color: #2c7be5;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
   text-decoration: none;
-}
-
-.page-link:hover {
-  text-decoration: underline;
-}
-.card {
-  background: #fff;
-  border: 1px solid #ddd;
-  padding: 20px;
+  border: 2px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  flex: 1;
-  min-width: 180px;
-  text-align: center;
+  padding: 8px 14px;
+}
+.page-link:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Checkered-flag accent strip */
+.checkers {
+  height: 10px;
+  background:
+    repeating-conic-gradient(#f4f7f2 0% 25%, #0b1d13 0% 50%) 0 0 / 20px 10px;
+  border-bottom: 1px solid var(--line);
 }
 
-.card h3 {
-  color: #34495e;
-  margin-bottom: 10px;
-}
+/* ---------- Layout ---------- */
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 48px; }
 
-.card p {
-  font-size: 24px;
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-
-h1, h3 {
-  text-align: center;
-  color: #4b3f72;
-  margin-top: 0;
-}
-
-input, select, button {
-  display: block;
-  width: 90%;
-  max-width: 400px;
-  margin: 10px auto;
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-}
-
-button {
-  background-color: #4b3f72;
-  color: white;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-button:hover {
-  background-color: #362a52;
-}
-
-.form-actions {
-  width: 90%;
-  max-width: 400px;
-  margin: 0 auto;
+.calc-grid {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+  align-items: start;
 }
 
-.share-button {
-  background-color: #2c7be5;
+.bet-card, .payout-card, .history-card, .auth-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
-.share-button:hover {
-  background-color: #1a5dcc;
+.bet-card h2, .history-card h2, .auth-card h2 {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 18px;
+  color: var(--gold);
 }
 
-#result, #authStatus, #historySection {
-  text-align: center;
-  margin-top: 15px;
-  padding: 15px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-#bettingForm {
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-#userInfo {
-  margin-bottom: 4px;
-}
-
-#logoutBtn,
-#loadHistoryBtn {
-  max-width: 240px;
-}
+/* ---------- Form ---------- */
+.form-group { margin-bottom: 16px; }
 
 label {
   display: block;
-  width: 90%;
-  max-width: 400px;
-  margin: 0 auto;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 0.85rem;
   font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
 }
 
 label > input[type="checkbox"] {
   width: auto;
   margin-right: 8px;
+  accent-color: var(--gold);
 }
 
-table {
+input, select {
+  display: block;
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 16px;
-  background: #fff;
-}
-
-th,
-td {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
-}
-
-th {
-  background: #f4f4f4;
-}
-
-tbody tr:hover {
-  background: #f9f9f9;
-}
-
-select {
-  background-color: white;
-}
-
-input[type="email"], input[type="password"], input[type="number"], input[type="text"] {
-  background-color: #ffffff;
-}
-
-input:focus, select:focus, button:focus {
+  padding: 13px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 2px solid var(--line);
+  border-radius: 10px;
   outline: none;
-  border-color: #4b3f72;
-  box-shadow: 0 0 5px rgba(75, 63, 114, 0.5);
+}
+input::placeholder { color: #6f8a78; }
+input:focus, select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255, 199, 0, 0.25);
+}
+select { appearance: none; }
+
+/* ---------- Buttons ---------- */
+button {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  padding: 13px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.1s, background 0.2s, border-color 0.2s;
+}
+button:active { transform: scale(0.98); }
+
+.form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+
+#calculateBtn { background: var(--gold); color: #1a1200; grid-column: 1 / -1; font-size: 1.15rem; padding: 15px; }
+#calculateBtn:hover { background: #ffd94d; }
+
+#submitBetBtn { background: var(--green); color: #04150b; }
+#submitBetBtn:hover { background: #4bd086; }
+
+#fetchPayoutApiBtn, #fetchPayoutBtn, #loadHistoryBtn {
+  background: transparent; color: var(--text); border-color: var(--line);
+}
+#fetchPayoutApiBtn:hover, #fetchPayoutBtn:hover, #loadHistoryBtn:hover { border-color: var(--gold); color: var(--gold); }
+
+.share-button { background: transparent; color: var(--gold); border-color: var(--gold); }
+.share-button:hover { background: rgba(255, 199, 0, 0.12); }
+
+#logoutBtn {
+  background: transparent;
+  color: #ff8a83;
+  border: 2px solid #7a2a26;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+#logoutBtn:hover { border-color: var(--red); color: #ffb3ae; }
+
+/* ---------- Payout display ---------- */
+.payout-card { position: sticky; top: 76px; }
+.payout-label {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+#result {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--gold);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.payout-note { color: var(--muted); font-size: 0.9rem; margin: 14px 0 0; }
+
+/* ---------- History ---------- */
+.history-card, .auth-card { margin-top: 20px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.section-head h2 { margin: 0; }
+#loadHistoryBtn { padding: 9px 14px; font-size: 0.85rem; }
+
+#historySection { margin-top: 16px; }
+.bet-row {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.bet-row strong { color: var(--gold); font-family: "Oswald", "Arial Narrow", sans-serif; letter-spacing: 0.04em; }
+#historySection hr { display: none; }
+
+/* ---------- Auth status on main page ---------- */
+#authStatus { font-weight: 600; }
+.auth-card a { font-weight: 600; }
+
+/* ---------- Legacy / shared ---------- */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  flex: 1;
+  min-width: 180px;
+  text-align: center;
+}
+.card h3 { color: var(--gold); margin: 0 0 10px; }
+.card p { font-size: 24px; font-weight: bold; color: var(--text); }
+
+table { width: 100%; border-collapse: collapse; margin-top: 16px; background: var(--panel); }
+th, td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; }
+th { background: #0a1a11; color: var(--gold); font-family: "Oswald", "Arial Narrow", sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }
+tbody tr:hover { background: rgba(255, 199, 0, 0.05); }
+
+#logo-header { text-align: center; margin-bottom: 15px; }
+#logo-header img { width: 100px; height: auto; }
+
+/* ---------- Auth pages (login / signup) ---------- */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background:
+    repeating-conic-gradient(rgba(244, 247, 242, 0.06) 0% 25%, transparent 0% 50%) 0 0 / 28px 28px,
+    radial-gradient(ellipse 70% 60% at 50% 0%, #1d4a2e 0%, var(--bg) 70%);
+}
+.auth-page .auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 28px;
+  border-top: 4px solid var(--gold);
+}
+.auth-brand { text-align: center; margin-bottom: 24px; }
+.auth-brand img { width: 72px; height: auto; border-radius: 10px; }
+.auth-brand h1 {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 10px 0 4px;
+}
+.auth-brand h1 span { color: var(--gold); }
+.auth-sub { color: var(--muted); margin: 0; font-size: 0.95rem; }
+
+.auth-page .form-group { margin-bottom: 16px; }
+.auth-page button[type="submit"] {
+  width: 100%;
+  background: var(--gold);
+  color: #1a1200;
+  font-size: 1.05rem;
+  padding: 14px;
+  margin-top: 4px;
+}
+.auth-page button[type="submit"]:hover { background: #ffd94d; }
+
+.auth-error {
+  display: none;
+  background: rgba(232, 50, 42, 0.15);
+  border: 1px solid var(--red);
+  color: #ffb3ae;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+}
+.auth-success {
+  background: rgba(47, 191, 113, 0.15);
+  border: 1px solid var(--green);
+  color: #9fe8bd;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+  text-align: center;
+}
+.auth-switch { text-align: center; color: var(--muted); margin: 18px 0 0; font-size: 0.95rem; }
+.auth-switch a { font-weight: 600; }
+.auth-back { text-align: center; margin: 14px 0 0; font-size: 0.9rem; }
+.auth-back a { color: var(--muted); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .calc-grid { grid-template-columns: 1fr; }
+  .payout-card { position: static; }
+  #userInfo { display: none; }
 }
 
 @media (max-width: 600px) {
-  body {
-    padding: 12px;
-  }
-
-  input, select, button {
-    width: 100%;
-    font-size: 14px;
-  }
-
-  .form-actions {
-    width: 100%;
-  }
-
-  label {
-    width: 100%;
-    max-width: none;
-  }
-
-  #result,
-  #authStatus,
-  #historySection {
-    padding: 12px;
-    font-size: 0.95rem;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-  }
-}
-
-/* FirebaseUI Custom Theme for Horse Odds Calculator */
-.firebaseui-container, .firebaseui-card-content {
-  background-color: #f4f4f4;
-  border-radius: 10px;
-  padding: 30px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  font-family: 'Segoe UI', sans-serif;
-}
-
-.firebaseui-idp-button, .firebaseui-id-submit {
-  background-color: #552E30 !important;
-  color: white !important;
-  border-radius: 6px;
-  font-weight: bold;
-}
-
-.firebaseui-idp-button:hover {
-  background-color: #3e2022 !important;
-}
-
-.firebaseui-title {
-  font-size: 1.5em;
-  color: #552E30;
-  text-align: center;
-}
-
-.firebaseui-text, .firebaseui-label {
-  color: #333;
-}
-
-#logo-header {
-  text-align: center;
-  margin-bottom: 15px;
-}
-
-#logo-header img {
-  width: 100px;
-  height: auto;
+  .topbar { padding: 10px 12px; }
+  .brand-name { font-size: 1.25rem; }
+  .brand-tag { display: none; }
+  .wrap { padding: 16px 12px 32px; }
+  .bet-card, .payout-card, .history-card, .auth-card { padding: 18px 16px; }
+  .form-actions { grid-template-columns: 1fr; }
+  #calculateBtn { grid-column: auto; }
+  .section-head { flex-direction: column; align-items: stretch; }
+  #loadHistoryBtn { width: 100%; }
+  .auth-page .auth-card { padding: 26px 20px; }
 }

@@ -12,90 +12,118 @@
   <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  
+
   <!-- Your main logic -->
   <script defer src="app.js"></script>
 </head>
 
 <body>
-  <a class="page-link" href="dashboard.html">User Dashboard</a>
-  <h1>🐎 Horse Odds Calculator</h1>
-  <div id="userInfo" style="text-align:center;">Not logged in</div>
-  <button type="button" id="logoutBtn">Log Out</button>
-  <form id="bettingForm">
-    <div class="form-group">
-      <label for="trackName">Track Name:</label>
-      <input type="text" id="trackName" placeholder="Track name" />
+  <header class="topbar">
+    <div class="brand">
+      <img src="logo.png" alt="Horse Odds Calculator logo" />
+      <div>
+        <div class="brand-name">Horse <span>Odds</span></div>
+        <div class="brand-tag">Calculator</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div id="userInfo">Not logged in</div>
+      <a class="page-link" href="dashboard.html">Dashboard</a>
+      <button type="button" id="logoutBtn">Log Out</button>
+    </div>
+  </header>
+  <div class="checkers" aria-hidden="true"></div>
+
+  <main class="wrap">
+    <div class="calc-grid">
+      <section class="bet-card">
+        <h2>Place Your Bet</h2>
+        <form id="bettingForm">
+          <div class="form-group">
+            <label for="trackName">Track Name</label>
+            <input type="text" id="trackName" placeholder="Track name" />
+          </div>
+
+          <div class="form-group">
+            <label for="horseName">Horse Name</label>
+            <input type="text" id="horseName" placeholder="Horse name" />
+          </div>
+
+          <div class="form-group">
+            <label for="raceNumber">Race Number</label>
+            <input type="number" id="raceNumber" placeholder="Race number" min="1" />
+          </div>
+
+          <div class="form-group">
+            <label for="betMode">Bet Mode</label>
+            <select id="betMode">
+              <option value="win">Win</option>
+              <option value="place">Place</option>
+              <option value="show">Show</option>
+              <option value="exacta">Exacta</option>
+              <option value="exacta_box">Exacta Box</option>
+              <option value="trifecta">Trifecta</option>
+              <option value="trifecta_key">Trifecta Key</option>
+              <option value="superfecta">Superfecta</option>
+              <option value="pick3">Pick 3</option>
+              <option value="pick4">Pick 4</option>
+              <option value="pick5">Pick 5</option>
+              <option value="pick6">Pick 6</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="betAmount">Bet Amount (min $0.50)</label>
+            <input type="number" id="betAmount" placeholder="Enter amount (min $0.50)" min="0.5" step="0.01" />
+          </div>
+
+          <div class="form-group">
+            <label for="oddsInput">Odds (e.g. 5/2)</label>
+            <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" />
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="isWinner" />
+              Mark as winner
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="calculateBtn">Calculate</button>
+            <button type="button" id="fetchPayoutApiBtn">Calculate via API</button>
+            <button type="button" id="submitBetBtn">Save Bet</button>
+            <button type="button" class="share-button" id="shareBtn">Share Bet</button>
+            <button type="button" id="fetchPayoutBtn">Fetch Live Odds</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="payout-card">
+        <div class="payout-label">Payout</div>
+        <div id="result">Enter your bet to see the payout.</div>
+        <p class="payout-note">Your payout updates as soon as you hit Calculate.</p>
+      </aside>
     </div>
 
-    <div class="form-group">
-      <label for="horseName">Horse Name:</label>
-      <input type="text" id="horseName" placeholder="Horse name" />
-    </div>
+    <section class="history-card">
+      <div class="section-head">
+        <h2>📜 History</h2>
+        <button type="button" id="loadHistoryBtn">Load Bet History</button>
+      </div>
+      <div id="historySection"></div>
+    </section>
 
-    <div class="form-group">
-      <label for="raceNumber">Race Number:</label>
-      <input type="number" id="raceNumber" placeholder="Race number" min="1" />
-    </div>
+    <section class="auth-card">
+      <h2>🔐 Account</h2>
+      <div id="authStatus">Not logged in</div>
+      <p><a href="login.html">Log in</a> · <a href="signup.html">Sign up</a></p>
+    </section>
 
-    <div class="form-group">
-      <label for="betMode">Bet Mode:</label>
-      <select id="betMode">
-        <option value="win">Win</option>
-        <option value="place">Place</option>
-        <option value="show">Show</option>
-        <option value="exacta">Exacta</option>
-        <option value="exacta_box">Exacta Box</option>
-        <option value="trifecta">Trifecta</option>
-        <option value="trifecta_key">Trifecta Key</option>
-        <option value="superfecta">Superfecta</option>
-        <option value="pick3">Pick 3</option>
-        <option value="pick4">Pick 4</option>
-        <option value="pick5">Pick 5</option>
-        <option value="pick6">Pick 6</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="betAmount">Bet Amount (min $0.50):</label>
-      <input type="number" id="betAmount" placeholder="Enter amount (min $0.50)" min="0.5" step="0.01" />
-    </div>
-
-    <div class="form-group">
-      <label for="oddsInput">Odds (e.g. 5/2):</label>
-      <input type="text" id="oddsInput" placeholder="Odds (e.g. 5/2)" />
-    </div>
-
-    <div class="form-group">
-      <label>
-        <input type="checkbox" id="isWinner" />
-        Mark as winner
-      </label>
-    </div>
-
-    <div class="form-actions">
-      <button type="button" id="calculateBtn">Calculate</button>
-      <button type="button" id="fetchPayoutApiBtn">Calculate via API</button>
-      <button type="button" id="submitBetBtn">Save Bet</button>
-      <button type="button" class="share-button" id="shareBtn">Share Bet</button>
-      <button type="button" id="fetchPayoutBtn">Fetch Live Odds</button>
-    </div>
-    <div id="result"></div>
-  </form>
-
-  <h3>📜 History</h3>
-  <button type="button" id="loadHistoryBtn">Load Bet History</button>
-  <div id="historySection"></div>
-
-  <!-- The authentication UI for signing up/in/out should ideally be on a dedicated login/authentication page. -->
-  <!-- On a protected page, only the user's authentication status might be displayed. -->
-  <h3>🔐 Auth</h3>
-  <div id="authStatus">Not logged in</div>
-
-
-<section id="user-dashboard" style="display:none;">
-  <!-- dashboard content will be here -->
-</section>
+    <section id="user-dashboard" style="display:none;">
+      <!-- dashboard content will be here -->
+    </section>
+  </main>
 
   <script>
     // Register service worker for offline caching when supported.
