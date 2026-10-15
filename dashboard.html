@@ -103,8 +103,9 @@
       appId: "1:258212871291:web:efcbb1d5715a9c9cd476de"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    // NOTE: dashboard.js declares `auth` and `db` itself — do not
+    // redeclare them here or the page crashes with
+    // "Identifier 'auth' has already been declared" and no bets load.
   </script>
 
   <!-- Dashboard Logic -->
