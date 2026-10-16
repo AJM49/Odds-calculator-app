@@ -4,7 +4,9 @@
 // localStorage by racecard.js) and renders every field the provider
 // supplies: track, race, post time, distance, age, status, and the full
 // runners table (horse, jockey, trainer, age, weight, form, odds, SP,
-// finish, beaten distance).
+// finish, beaten distance). On the free data plan, odds/SP come back
+// withheld and beaten distance comes back null, so those columns show
+// "—" for live races; demo races still carry sample values.
 //
 // Past Winners: the provider has NO endpoint for all-time past winners of
 // a race, so this history is built locally. "Save This Race's Result"
@@ -31,7 +33,9 @@
     return s === "" ? "—" : s;
   }
 
-  // Local fallback if racecard.js failed to load (its raceTime is preferred).
+  // Local fallback if racecard.js failed to load. Saved races carry a
+  // formatted `offtime` ("5:10 PM"); older entries may only have a date
+  // string with an embedded time.
   function parseTimeFallback(dateStr) {
     const raw = toText(dateStr);
     if (!raw) return "";
@@ -46,8 +50,8 @@
   }
 
   function raceTime(race) {
-    if (typeof U.raceTime === "function") return U.raceTime(race);
     if (toText(race?.offtime)) return toText(race.offtime);
+    if (typeof U.formatPostTime === "function" && toText(race?.time)) return U.formatPostTime(race.time);
     return parseTimeFallback(race?.date);
   }
 
@@ -176,7 +180,7 @@
     }
     if (status) status.textContent = "Fetching this race's result…";
     try {
-      const res = await fetch(`/.netlify/functions/racecards?action=race&id=${encodeURIComponent(String(race.id))}`, { cache: "no-store" });
+      const res = await fetch(`/.netlify/functions/apihorseracing?action=race&id=${encodeURIComponent(String(race.id))}`, { cache: "no-store" });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body) throw new Error((body && body.message) || `Result request failed (${res.status}).`);
       const detail = typeof U.normalizeRaceDetail === "function" ? U.normalizeRaceDetail(body.data) : null;

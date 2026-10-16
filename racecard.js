@@ -1,22 +1,29 @@
 // Phase 1 — "Today's Card" (paper betting).
 //
-// Data comes from the Netlify Function proxy (/.netlify/functions/racecards),
-// which forwards to the RapidAPI "Horse Racing USA" API and caches the day's
-// cards so the free tier (50 req/day) lasts. If the function is not
-// configured (no RAPIDAPI_KEY) or unreachable, the section falls back to a
-// clearly labeled DEMO card with fictional names — never presented as real.
+// Data comes from the Netlify Function proxy
+// (/.netlify/functions/apihorseracing), which forwards to Apihorseracing
+// and caches the day's cards so the free tier (50 lookups/day) lasts. If
+// the function is not configured (no APIHORSERACING_KEY) or unreachable,
+// the section falls back to a clearly labeled DEMO card with fictional
+// names — never presented as real.
 //
-// Upstream shapes (verified against the provider's client):
-//   GET /racecards?date=YYYY-MM-DD -> [{id_race, course, date, distance,
-//       age, finished, canceled, offtime}]
-//   GET /race/{id_race} -> {id_race, course, ..., horses: [{horse, id_horse,
-//       jockey, trainer, age, weight, number, non_runner, form, position,
-//       distance_beaten, sp, odds, poolData}]}
-//       NOTE: `odds` is an object { each_way: [...], winner: [...] }, NOT a
-//       string — see extractOddsString. `sp` is the starting price. Age may
-//       come back as 0 when unknown — shown as blank, not 0.
-// The API exposes no explicit race number, so Race N is the race's order
-// on its course's card (sorted by id_race, which follows card order).
+// Upstream shapes (verified live 2026-10-16 against the free key):
+//   GET /racecards/{date} -> { data: [ { meeting_id, course, country,
+//       date, going, surface, races: [ { race_id, time, name, distance,
+//       age, surface, going, result_available, runners } ] } ] }
+//       `runners` on a card race is a COUNT, not a list. Race numbers are
+//       derived: races are in time order within a meeting, numbered 1..N.
+//   GET /races/{race_id} -> { data: { race_id, course, date, time, name,
+//       distance, age, surface, going, result_available, runners: [
+//       { cloth, draw, horse, age, weight, official_rating, form, owner,
+//         trainer, jockey, favourite, market_position, position,
+//         beaten_distance, casualty, run_status, sp, sp_decimal, ... } ] } }
+//       `weight` is stones-pounds ("8-11"), converted to pounds for the
+//       card. `sp` / `sp_decimal` are WITHHELD (null) on the free key —
+//       odds always show "—" and the calculator odds stay blank for
+//       manual entry. `position` is an int when settled, else null.
+//       `going`, `weather`, `winning_time`, `beaten_distance` are null
+//       for US races even when settled; `surface` IS populated.
 
 (function () {
   "use strict";
@@ -53,49 +60,28 @@
     return decimal;
   }
 
-  // Extract a displayable odds string from the API's `odds` field.
-  // Per the provider's own sample data, `odds` is NOT a string — it is an
-  // object: { each_way: [...], winner: [...] }, where each array holds
-  // bookmaker price entries when present (empty in the sample). `sp`
-  // (starting price) is a separate field that may hold the price on
-  // finished races. Returns "" when no price is available (the UI shows
-  // "—" and leaves the calculator odds blank for manual entry).
-  function extractOddsString(oddsValue, spValue) {
-    const fromEntry = (entry) => {
-      if (entry === null || entry === undefined) return "";
-      if (typeof entry === "string" || typeof entry === "number") return String(entry).trim();
-      if (typeof entry === "object") {
-        for (const key of ["fractional", "decimal", "price", "odds", "value", "sp", "display"]) {
-          const v = entry[key];
-          if (typeof v === "string" || typeof v === "number") {
-            const s = String(v).trim();
-            if (s) return s;
-          }
-        }
-      }
-      return "";
-    };
-    if (typeof oddsValue === "string" || typeof oddsValue === "number") {
-      const s = String(oddsValue).trim();
-      if (s) return s;
-    }
-    if (oddsValue && typeof oddsValue === "object") {
-      for (const key of ["winner", "each_way"]) {
-        const arr = oddsValue[key];
-        if (Array.isArray(arr)) {
-          for (const entry of arr) {
-            const s = fromEntry(entry);
-            if (s) return s;
-          }
-        }
-      }
-      const direct = fromEntry(oddsValue);
-      if (direct) return direct;
-    }
-    if (typeof spValue === "string" || typeof spValue === "number") {
-      return String(spValue).trim();
-    }
-    return "";
+  // "17:10" -> "5:10 PM". The feed gives scheduled post time as 24-hour
+  // "HH:MM" (course-local, no timezone). Returns "" when unparseable.
+  function formatPostTime(timeValue) {
+    const raw = toText(timeValue);
+    const m = raw.match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return "";
+    let hour = Number(m[1]);
+    const minute = m[2];
+    if (!Number.isFinite(hour) || hour > 23) return "";
+    const suffix = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${hour}:${minute} ${suffix}`;
+  }
+
+  // "8-11" (stones-pounds) -> "123" (pounds). Plain pounds ("126") pass
+  // through. Anything else passes through untouched.
+  function displayWeight(weightValue) {
+    const raw = toText(weightValue);
+    const m = raw.match(/^(\d+)-(\d{1,2})$/);
+    if (!m) return raw;
+    return String(Number(m[1]) * 14 + Number(m[2]));
   }
 
   // The live feed returns age 0 for runners whose age is unknown — show
@@ -108,39 +94,36 @@
     return s;
   }
 
-  function isScratched(nonRunner) {
-    if (nonRunner === true || nonRunner === 1) return true;
-    const raw = toText(nonRunner).toLowerCase();
-    return raw === "1" || raw === "true" || raw === "yes" || raw === "y" || raw === "scr";
-  }
-
-  // Normalize a racecards response into per-course races with derived race
-  // numbers (1..N in card order per course). Returns [] for anything
-  // unexpected instead of throwing.
+  // Normalize a racecards response (array of meetings) into per-course
+  // races with derived race numbers (1..N in time order per meeting).
+  // Returns [] for anything unexpected instead of throwing.
   function normalizeRacecards(raw) {
-    const list = Array.isArray(raw) ? raw : [];
-    const byCourse = new Map();
-    list.forEach((race) => {
-      if (!race || typeof race !== "object") return;
-      const course = toText(race.course) || "Unknown track";
-      if (!byCourse.has(course)) byCourse.set(course, []);
-      byCourse.get(course).push(race);
-    });
+    const meetings = Array.isArray(raw) ? raw : [];
     const out = [];
-    byCourse.forEach((races, course) => {
+    meetings.forEach((meeting) => {
+      if (!meeting || typeof meeting !== "object") return;
+      const course = toText(meeting.course) || "Unknown track";
+      const date = toText(meeting.date);
+      const races = Array.isArray(meeting.races) ? meeting.races : [];
       const sorted = races
+        .filter((r) => r && typeof r === "object")
         .slice()
-        .sort((a, b) => (Number(a.id_race) || 0) - (Number(b.id_race) || 0));
+        .sort((a, b) => toText(a.time).localeCompare(toText(b.time)));
       sorted.forEach((race, idx) => {
         out.push({
-          id: race.id_race,
+          id: toText(race.race_id),
           course,
-          date: toText(race.date),
+          date,
+          name: toText(race.name),
           distance: toText(race.distance),
           age: toText(race.age),
-          finished: race.finished === true || toText(race.finished) === "1",
-          canceled: race.canceled === true || toText(race.canceled) === "1",
-          offtime: toText(race.offtime),
+          surface: toText(race.surface) || toText(meeting.surface),
+          going: toText(race.going) || toText(meeting.going),
+          finished: race.result_available === true,
+          canceled: false,
+          time: toText(race.time),
+          offtime: formatPostTime(race.time),
+          runners: Number(race.runners) || 0,
           raceNo: idx + 1,
         });
       });
@@ -148,66 +131,66 @@
     return out;
   }
 
-  // Normalize a /race/{id} response into { race, horses: [...] }.
+  // Normalize a /races/{id} response into { race, horses: [...] }.
+  // Odds/SP are withheld (null) on the free key, so they normalize to "" —
+  // the UI shows "—" and the calculator odds stay blank for manual entry.
+  // A settled horse carries an int position; an unsettled one carries null.
+  // `casualty` (e.g. "Fell") shows in the Fin column when there is no
+  // position. There is no scratched flag in this feed — withdrawn horses
+  // simply leave the field — so scratched is always false here.
   function normalizeRaceDetail(raw) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-    const horsesRaw = Array.isArray(raw.horses) ? raw.horses : [];
-    const horses = horsesRaw
+    const runnersRaw = Array.isArray(raw.runners) ? raw.runners : [];
+    const horses = runnersRaw
       .filter((h) => h && typeof h === "object")
-      .map((h) => ({
-        number: toText(h.number),
-        horse: toText(h.horse),
-        jockey: toText(h.jockey),
-        trainer: toText(h.trainer),
-        age: cleanAge(h.age),
-        weight: toText(h.weight),
-        form: toText(h.form),
-        odds: extractOddsString(h.odds, h.sp),
-        sp: toText(h.sp),
-        beaten: toText(h.distance_beaten),
-        position: toText(h.position),
-        scratched: isScratched(h.non_runner),
-      }))
+      .map((h) => {
+        const pos = Number(h.position);
+        return {
+          number: toText(h.cloth),
+          horse: toText(h.horse),
+          jockey: toText(h.jockey),
+          trainer: toText(h.trainer),
+          age: cleanAge(h.age),
+          weight: displayWeight(h.weight),
+          form: toText(h.form),
+          draw: toText(h.draw),
+          rating: toText(h.official_rating),
+          favourite: h.favourite === true,
+          marketPosition: toText(h.market_position),
+          odds: "",
+          sp: "",
+          beaten: toText(h.beaten_distance),
+          position: Number.isFinite(pos) && pos > 0 ? String(pos) : toText(h.casualty),
+          scratched: false,
+        };
+      })
       .sort((a, b) => (Number(a.number) || 999) - (Number(b.number) || 999));
     return {
       race: {
-        id: raw.id_race,
+        id: toText(raw.race_id),
         course: toText(raw.course),
         date: toText(raw.date),
+        name: toText(raw.name),
         distance: toText(raw.distance),
         age: toText(raw.age),
-        finished: raw.finished === true || toText(raw.finished) === "1",
-        canceled: raw.canceled === true || toText(raw.canceled) === "1",
-        offtime: toText(raw.offtime),
+        surface: toText(raw.surface),
+        going: toText(raw.going),
+        finished: raw.result_available === true,
+        canceled: false,
+        time: toText(raw.time),
+        offtime: formatPostTime(raw.time),
       },
       horses,
     };
   }
 
-  // The provider puts the post time inside the `date` string, e.g.
-  // "2026-10-15 13:30 (UTC-4)". Pull it out as "1:30 PM (UTC-4)".
-  // `offtime` exists but was empty in the provider's sample data, so the
-  // date string is the reliable source. Returns "" when no time is found.
-  function parseRaceTime(dateStr) {
-    const raw = toText(dateStr);
-    if (!raw) return "";
-    const timeMatch = raw.match(/(\d{1,2}):(\d{2})/);
-    if (!timeMatch) return "";
-    let hour = Number(timeMatch[1]);
-    const minute = timeMatch[2];
-    const suffix = hour >= 12 ? "PM" : "AM";
-    hour = hour % 12;
-    if (hour === 0) hour = 12;
-    const tzMatch = raw.match(/\(([^)]+)\)/);
-    const tz = tzMatch ? ` (${tzMatch[1]})` : "";
-    return `${hour}:${minute} ${suffix}${tz}`;
-  }
-
-  // Prefer the `offtime` field when populated, else parse the date string.
+  // Post time for a saved race: `offtime` is already formatted ("5:10 PM")
+  // by the normalizers. Kept as a helper so the dashboard panel and any
+  // older saved entries resolve the same way.
   function raceTime(race) {
     if (!race) return "";
     if (toText(race.offtime)) return toText(race.offtime);
-    return parseRaceTime(race.date);
+    return formatPostTime(race.time);
   }
 
   // Remember the last race the user opened, so the dashboard's Race Detail
@@ -278,7 +261,7 @@
 
   async function fetchFromProxy(action, params) {
     const query = new URLSearchParams({ action, ...params });
-    const res = await fetch(`/.netlify/functions/racecards?${query.toString()}`, {
+    const res = await fetch(`/.netlify/functions/apihorseracing?${query.toString()}`, {
       cache: "no-store",
     });
     const body = await res.json().catch(() => null);
@@ -391,7 +374,7 @@
     const title = document.createElement("h3");
     title.className = "racecard-race-title";
     const raceNo = state.races.find((r) => String(r.id) === String(detail.race.id))?.raceNo;
-    title.textContent = `${detail.race.course || ""}${raceNo ? ` — Race ${raceNo}` : ""}${detail.race.distance ? ` · ${detail.race.distance}` : ""}`;
+    title.textContent = `${detail.race.course || ""}${raceNo ? ` — Race ${raceNo}` : ""}${detail.race.name ? ` · ${detail.race.name}` : ""}${detail.race.distance ? ` · ${detail.race.distance}` : ""}`;
     ui.runners.appendChild(title);
 
     if (!detail.horses.length) {
@@ -414,7 +397,7 @@
       if (h.scratched) tr.classList.add("scratched");
       const cells = [
         h.number || "—",
-        h.horse || "—",
+        h.favourite ? `★ ${h.horse || "—"}` : h.horse || "—",
         h.jockey || "—",
         h.trainer || "—",
         h.age || "—",
@@ -461,7 +444,7 @@
     if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
     setStatus(
       `Loaded into the calculator: ${horse.horse || "runner"} @ ${race.course || ""}${raceNo ? `, Race ${raceNo}` : ""}` +
-        (decimal === null ? " — odds not in a recognized format, enter them by hand." : ". Enter your bet amount and hit Calculate."),
+        (decimal === null ? " — starting prices are withheld on the free data plan, enter morning-line odds by hand." : ". Enter your bet amount and hit Calculate."),
       false
     );
   }
@@ -504,7 +487,7 @@
     state.selectedRaceId = null;
     state.detail = null;
     setDemoBanner(true);
-    setStatus("Demo card — sample data. Add your RapidAPI key to see today's real cards.");
+    setStatus("Demo card — sample data. Add your Apihorseracing key to see today's real cards.");
     renderTrackOptions();
     renderRaceList();
     renderRunners();
@@ -591,11 +574,10 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = {
       oddsToDecimal,
-      extractOddsString,
       cleanAge,
-      parseRaceTime,
+      formatPostTime,
+      displayWeight,
       raceTime,
-      isScratched,
       normalizeRacecards,
       normalizeRaceDetail,
       DEMO_RACES,
@@ -607,9 +589,9 @@
   if (typeof window !== "undefined") {
     window.RacecardUtils = {
       oddsToDecimal,
-      extractOddsString,
       cleanAge,
-      parseRaceTime,
+      formatPostTime,
+      displayWeight,
       raceTime,
       normalizeRacecards,
       normalizeRaceDetail,

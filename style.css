@@ -659,3 +659,43 @@ tbody tr:hover { background: rgba(255, 199, 0, 0.05); }
   border-top: 1px solid var(--line);
   padding-top: 10px;
 }
+
+/* ---------- Phase 2-lite settlement ---------- */
+
+.settle-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 6px;
+}
+
+.settle-row label {
+  margin: 0;
+}
+
+.settle-row input[type="date"] {
+  width: auto;
+  min-width: 170px;
+}
+
+#settleBetsBtn {
+  background: transparent;
+  color: var(--gold);
+  border: 2px solid var(--gold);
+}
+
+#settleBetsBtn:hover {
+  background: rgba(255, 199, 0, 0.12);
+}
+
+#settleBetsBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settle-status {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 10px;
+}

@@ -522,6 +522,8 @@ if (submitBetBtn) {
         winnings: winnings,
 
         outcome: outcome,
+        // Phase 2-lite: false until Settle Bets confirms the real result.
+        settled: false,
 
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         createdAtMs: Date.now()
@@ -577,7 +579,7 @@ async function loadBetHistory() {
         .get();
     }
     const bets = [];
-    snapshot.forEach((doc) => bets.push(doc.data()));
+    snapshot.forEach((doc) => bets.push({ id: doc.id, ...doc.data() }));
     renderBetHistory(bets);
 
   } catch (error) {
@@ -649,6 +651,15 @@ function renderBetHistory(bets) {
     );
     row.appendChild(document.createElement("br"));
 
+    row.appendChild(
+      document.createTextNode(
+        bet.settled
+          ? `Settled ✓ (finished ${bet.settledPosition ?? "—"})`
+          : "Not settled yet"
+      )
+    );
+    row.appendChild(document.createElement("br"));
+
     row.appendChild(document.createTextNode(`Time: ${formatBetTime(bet)}`));
 
     historySection.appendChild(row);
@@ -667,7 +678,7 @@ function startBetHistoryTracking(userId) {
 
   const onSnapshotSuccess = (snapshot) => {
     const bets = [];
-    snapshot.forEach((doc) => bets.push(doc.data()));
+    snapshot.forEach((doc) => bets.push({ id: doc.id, ...doc.data() }));
     renderBetHistory(bets);
   };
 
@@ -821,3 +832,177 @@ stakeChips.forEach((chip) => {
 });
 
 updateOddsHelp();
+
+/* ------------------------------------
+11. Phase 2-lite settlement (free): real positions, estimated payouts
+------------------------------------ */
+// Settles unsettled Win / Place / Show bets against the real finishing
+// positions from the same provider that feeds Today's Card. Payouts stay
+// ESTIMATED (from the odds entered at bet time) because real starting
+// prices need a paid plan. Exotic bets are skipped with a note — one
+// horse's position cannot settle an exacta, trifecta, superfecta, or pick N.
+
+const settleDateInput = document.getElementById("settleDate");
+const settleBetsBtn = document.getElementById("settleBetsBtn");
+const settleStatus = document.getElementById("settleStatus");
+const SU = (typeof window !== "undefined" && window.SettleUtils) || null;
+
+function setSettleStatus(text) {
+  if (settleStatus) settleStatus.textContent = text;
+}
+
+function defaultSettleDate() {
+  if (!settleDateInput) return "";
+  if (!settleDateInput.value) {
+    settleDateInput.value = (SU ? SU.localDateString(Date.now()) : "");
+  }
+  return settleDateInput.value;
+}
+
+async function fetchSettleResults(dateStr) {
+  const res = await fetch(
+    `/.netlify/functions/apihorseracing?action=results&date=${encodeURIComponent(dateStr)}`,
+    { cache: "no-store" }
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body) {
+    throw new Error((body && body.message) || `Results request failed (${res.status}).`);
+  }
+  return body.data;
+}
+
+async function fetchSettleResult(raceId) {
+  const res = await fetch(
+    `/.netlify/functions/apihorseracing?action=result&id=${encodeURIComponent(String(raceId))}`,
+    { cache: "no-store" }
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body) {
+    throw new Error((body && body.message) || `Result request failed (${res.status}).`);
+  }
+  return body.data;
+}
+
+async function settleBets() {
+  if (!SU) {
+    setSettleStatus("Settlement helpers failed to load. Reload the page and try again.");
+    return;
+  }
+  const user = auth.currentUser;
+  if (!user) {
+    setSettleStatus("Log in to settle bets.");
+    return;
+  }
+  const dateStr = defaultSettleDate();
+  if (!dateStr) {
+    setSettleStatus("Pick a date to settle.");
+    return;
+  }
+  if (settleBetsBtn) settleBetsBtn.disabled = true;
+  setSettleStatus(`Checking ${dateStr} results…`);
+  try {
+    let snapshot;
+    try {
+      snapshot = await db
+        .collection("bets")
+        .where("userId", "==", user.uid)
+        .orderBy("createdAtMs", "desc")
+        .limit(50)
+        .get();
+    } catch (orderError) {
+      snapshot = await db
+        .collection("bets")
+        .where("userId", "==", user.uid)
+        .limit(50)
+        .get();
+    }
+    const bets = [];
+    snapshot.forEach((doc) => bets.push({ id: doc.id, ...doc.data() }));
+
+    // Only bets placed on the chosen date, not yet settled.
+    const due = bets.filter(
+      (b) => b.settled !== true && SU.localDateString(getBetSortTime(b)) === dateStr
+    );
+    if (!due.length) {
+      setSettleStatus(`No unsettled bets placed on ${dateStr}.`);
+      return;
+    }
+
+    const resultsMeetings = await fetchSettleResults(dateStr);
+    const raceIndex = SU.indexResults(resultsMeetings);
+    const notes = [];
+    let settledCount = 0;
+
+    // Group due bets by (course + race number) so each race is fetched once.
+    const groups = new Map();
+    due.forEach((bet) => {
+      const key = `${SU.normalizeName(bet.trackName)}|${bet.raceNumber}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(bet);
+    });
+
+    for (const [key, groupBets] of groups) {
+      const race = raceIndex.get(key);
+      if (!race) {
+        groupBets.forEach((b) =>
+          notes.push(`${b.horseName || "—"} (${b.trackName} R${b.raceNumber}): no result for this race on ${dateStr}`)
+        );
+        continue;
+      }
+      let resultData;
+      try {
+        resultData = await fetchSettleResult(race.raceId);
+      } catch (err) {
+        groupBets.forEach((b) =>
+          notes.push(`${b.horseName || "—"} (${b.trackName} R${b.raceNumber}): result not ready yet`)
+        );
+        continue;
+      }
+      for (const bet of groupBets) {
+        const settled = SU.settleFromResult(bet.betType, resultData, bet.horseName);
+        if (settled.outcome === null) {
+          notes.push(`${bet.horseName} (${bet.trackName} R${bet.raceNumber}): ${settled.note}`);
+          continue;
+        }
+        let payout = Number(bet.payout);
+        if (!Number.isFinite(payout)) {
+          payout = calculateOdds(bet.betAmount, bet.odds, bet.betType);
+        }
+        if (payout === null || !Number.isFinite(payout)) {
+          notes.push(`${bet.horseName} (${bet.trackName} R${bet.raceNumber}): could not compute payout from entered odds`);
+          continue;
+        }
+        const winnings = settled.outcome === "win" ? payout : 0;
+        try {
+          await db.collection("bets").doc(bet.id).update({
+            outcome: settled.outcome,
+            winnings,
+            settled: true,
+            settledAtMs: Date.now(),
+            settledPosition: settled.position,
+          });
+          settledCount += 1;
+          notes.push(`${bet.horseName} (${bet.trackName} R${bet.raceNumber}): ${settled.note} → ${settled.outcome}`);
+        } catch (err) {
+          console.error(err);
+          notes.push(`${bet.horseName} (${bet.trackName} R${bet.raceNumber}): could not save settlement`);
+        }
+      }
+    }
+
+    setSettleStatus(
+      `Settled ${settledCount} bet(s) on ${dateStr}.` + (notes.length ? ` ${notes.join(" · ")}` : "")
+    );
+    loadBetHistory();
+  } catch (err) {
+    console.error(err);
+    setSettleStatus(`Could not settle: ${err.message}`);
+  } finally {
+    if (settleBetsBtn) settleBetsBtn.disabled = false;
+  }
+}
+
+defaultSettleDate();
+if (settleBetsBtn) {
+  settleBetsBtn.addEventListener("click", settleBets);
+}

@@ -1,29 +1,35 @@
-// Netlify Function: racecards proxy — Phase 1 "Today's Card".
+// Netlify Function: Apihorseracing proxy — Today's Card + settlement.
 //
-// The browser never sees the RapidAPI key. This function holds it in the
-// RAPIDAPI_KEY env var, forwards to the Horse Racing USA API, and caches
-// responses in memory so the 50-requests/day free tier is not burned by
+// The browser never sees the API key. This function holds it in the
+// APIHORSERACING_KEY env var, forwards to api.apihorseracing.com, and caches
+// responses in memory so the 50-lookups/day free tier is not burned by
 // every page load.
 //
-// GET /.netlify/functions/racecards?action=racecards&date=YYYY-MM-DD
-// GET /.netlify/functions/racecards?action=race&id=<id_race>
-// GET /.netlify/functions/racecards?action=results&date=YYYY-MM-DD
+// GET /.netlify/functions/apihorseracing?action=racecards&date=YYYY-MM-DD
+// GET /.netlify/functions/apihorseracing?action=race&id=<race_id>
+// GET /.netlify/functions/apihorseracing?action=results&date=YYYY-MM-DD
+// GET /.netlify/functions/apihorseracing?action=result&id=<race_id>
 //
-// Upstream API: horse-racing-usa.p.rapidapi.com (RapidAPI "Horse Racing USA").
-// Response shape is passed through untouched; the front end normalizes it.
+// Upstream API: api.apihorseracing.com/v1 (Apihorseracing), key in the
+// X-API-Key header. Every upstream response is { meta, data }; only `data`
+// is passed through to the front end.
+//
+// Free key window: yesterday, today, and ahead. A date outside the window
+// is refused upstream as outside_plan_window — that error is passed through
+// with its message, never answered with an empty card.
 
-const UPSTREAM_HOST = "horse-racing-usa.p.rapidapi.com";
-const UPSTREAM_BASE = `https://${UPSTREAM_HOST}`;
+const UPSTREAM_BASE = "https://api.apihorseracing.com/v1";
 
 // In-memory cache: key -> { expiresAt, body }. Netlify Functions are
 // stateless across cold starts, so this is a best-effort quota saver,
-// not a guarantee. Racecards/results change slowly; race detail is
-// fresher (odds move), so it gets a shorter TTL.
+// not a guarantee. Racecards/results change slowly; a single race is
+// fresher, so it gets a shorter TTL.
 const CACHE = new Map();
 const TTL = {
   racecards: 10 * 60 * 1000,
   results: 10 * 60 * 1000,
   race: 3 * 60 * 1000,
+  result: 10 * 60 * 1000,
 };
 
 function jsonResponse(statusCode, body, source) {
@@ -48,26 +54,31 @@ async function fetchUpstream(path, apiKey) {
   try {
     const res = await fetch(`${UPSTREAM_BASE}${path}`, {
       headers: {
-        "x-rapidapi-key": apiKey,
-        "x-rapidapi-host": UPSTREAM_HOST,
+        "X-API-Key": apiKey,
       },
       signal: controller.signal,
     });
     const text = await res.text();
-    let data = null;
+    let body = null;
     try {
-      data = text ? JSON.parse(text) : null;
+      body = text ? JSON.parse(text) : null;
     } catch (_) {
-      data = null;
+      body = null;
     }
     if (!res.ok) {
+      const err = body && body.error;
       return {
         ok: false,
         status: res.status,
-        error: (data && (data.message || data.error)) || `Upstream request failed (${res.status}).`,
+        error:
+          (err && (err.message || err.code)) ||
+          `Upstream request failed (${res.status}).`,
       };
     }
-    return { ok: true, status: 200, data };
+    if (!body || !("data" in body)) {
+      return { ok: false, status: 502, error: "Upstream response had no data." };
+    }
+    return { ok: true, status: 200, data: body.data };
   } catch (err) {
     return {
       ok: false,
@@ -80,11 +91,11 @@ async function fetchUpstream(path, apiKey) {
 }
 
 exports.handler = async (event) => {
-  const apiKey = process.env.RAPIDAPI_KEY || "";
+  const apiKey = process.env.APIHORSERACING_KEY || "";
   if (!apiKey) {
     return jsonResponse(503, {
       error: "not_configured",
-      message: "RAPIDAPI_KEY is not set on the site. The app will show the labeled demo card until it is configured.",
+      message: "APIHORSERACING_KEY is not set on the site. The app will show the labeled demo card until it is configured.",
     });
   }
 
@@ -99,20 +110,26 @@ exports.handler = async (event) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return jsonResponse(400, { error: "bad_date", message: "Pass date as YYYY-MM-DD." });
     }
-    upstreamPath = `/racecards?date=${date}`;
+    upstreamPath = `/racecards/${date}`;
     ttl = TTL.racecards;
   } else if (action === "results") {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return jsonResponse(400, { error: "bad_date", message: "Pass date as YYYY-MM-DD." });
     }
-    upstreamPath = `/results?date=${date}`;
+    upstreamPath = `/results/${date}`;
     ttl = TTL.results;
   } else if (action === "race") {
-    if (!/^\d+$/.test(id)) {
-      return jsonResponse(400, { error: "bad_id", message: "Pass a numeric race id." });
+    if (!/^rc_[A-Za-z0-9]+$/.test(id)) {
+      return jsonResponse(400, { error: "bad_id", message: "Pass a race id like rc_...." });
     }
-    upstreamPath = `/race/${id}`;
+    upstreamPath = `/races/${id}`;
     ttl = TTL.race;
+  } else if (action === "result") {
+    if (!/^rc_[A-Za-z0-9]+$/.test(id)) {
+      return jsonResponse(400, { error: "bad_id", message: "Pass a race id like rc_...." });
+    }
+    upstreamPath = `/races/${id}/result`;
+    ttl = TTL.result;
   } else {
     return jsonResponse(400, { error: "bad_action", message: "Unknown action." });
   }

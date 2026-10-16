@@ -14,6 +14,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <!-- Your main logic -->
+  <script defer src="settle.js"></script>
   <script defer src="app.js"></script>
   <!-- Today's Card (paper betting): racecards + runners, feeds the calculator -->
   <script defer src="racecard.js"></script>
@@ -163,6 +164,12 @@
         <h2>📜 History</h2>
         <button type="button" id="loadHistoryBtn">Load Bet History</button>
       </div>
+      <div class="settle-row">
+        <label for="settleDate">Settle results for</label>
+        <input type="date" id="settleDate" />
+        <button type="button" id="settleBetsBtn">Settle Bets</button>
+      </div>
+      <p id="settleStatus" class="settle-status">Settles unsettled Win / Place / Show bets placed on this date against the real finishing positions. Payouts stay estimated, from your entered odds.</p>
       <div id="historySection"></div>
     </section>
 
