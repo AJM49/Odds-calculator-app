@@ -503,7 +503,7 @@ if (submitBetBtn) {
 
     const winnings = winner ? payout : 0;
 
-    const outcome = winner ? "win" : "lose";
+    const outcome = winner ? "win" : "pending";
 
     if (!BK) {
       setResultMessage("Bankroll helpers failed to load. Reload the page and try again.");
