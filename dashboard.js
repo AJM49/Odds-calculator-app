@@ -19,6 +19,9 @@ const ui = {
   bestOdds: document.getElementById("bestOdds"),
   tableBody: document.getElementById("betsTableBody"),
   emptyState: document.getElementById("emptyState"),
+  bankrollBalanceBig: document.getElementById("bankrollBalanceBig"),
+  bankrollSub: document.getElementById("bankrollSub"),
+  resetBankrollBtn: document.getElementById("resetBankrollBtn"),
 };
 
 auth.onAuthStateChanged((user) => {
@@ -33,6 +36,8 @@ auth.onAuthStateChanged((user) => {
   bindRefreshButton();
 
   loadBets(user.uid);
+  loadBankroll(user.uid);
+  bindResetButton();
 });
 
 function bindRefreshButton() {
@@ -213,4 +218,52 @@ function renderBetsTable(bets) {
 
     ui.tableBody.appendChild(tr);
   });
+}
+
+/* ------------------------------------
+Virtual bankroll panel (paper betting)
+------------------------------------ */
+// $1,000 in virtual money per user. Stakes deduct when a bet is placed,
+// winnings credit when it settles. Fake money for learning — no real money.
+
+const BK = (typeof window !== "undefined" && window.Bankroll) || null;
+let isResetBound = false;
+
+async function loadBankroll(userId) {
+  if (!BK || !ui.bankrollBalanceBig) return;
+  try {
+    const data = await BK.ensureBankroll(db, userId);
+    renderBankroll(data);
+  } catch (err) {
+    console.error(err);
+    ui.bankrollBalanceBig.textContent = "—";
+  }
+}
+
+function renderBankroll(data) {
+  const balance = Number(data.balance) || 0;
+  const start = Number(data.startingBalance) || BK.STARTING_BALANCE;
+  const pl = balance - start;
+  ui.bankrollBalanceBig.textContent = BK.formatMoney(balance);
+  const plText = (pl >= 0 ? "+" : "-") + BK.formatMoney(Math.abs(pl));
+  if (ui.bankrollSub) {
+    ui.bankrollSub.textContent = `Profit/loss: ${plText} · fake money for learning`;
+  }
+  setMetricTone(ui.bankrollBalanceBig, pl);
+}
+
+function bindResetButton() {
+  if (!ui.resetBankrollBtn || isResetBound) return;
+  ui.resetBankrollBtn.addEventListener("click", async () => {
+    if (!currentUserId || !BK) return;
+    if (!window.confirm("Reset your virtual bankroll to $1,000? Your bet history stays.")) return;
+    try {
+      const data = await BK.resetBankroll(db, currentUserId);
+      renderBankroll(data);
+    } catch (err) {
+      console.error(err);
+      alert("Could not reset the bankroll. Try again.");
+    }
+  });
+  isResetBound = true;
 }

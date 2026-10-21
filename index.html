@@ -15,6 +15,7 @@
 
   <!-- Your main logic -->
   <script defer src="settle.js"></script>
+  <script defer src="bankroll.js"></script>
   <script defer src="app.js"></script>
   <!-- Today's Card (paper betting): racecards + runners, feeds the calculator -->
   <script defer src="racecard.js"></script>
@@ -113,6 +114,7 @@
 
           <fieldset class="bet-step">
             <legend><span class="step-num">3</span> Set your stake &amp; odds</legend>
+            <p id="bankrollLine" class="bankroll-line" aria-live="polite">Your virtual bankroll: <strong id="bankrollBalance">…</strong> <span class="bankroll-note">fake money for learning</span></p>
             <div class="form-group">
               <label>Quick stake</label>
               <div class="stake-chips" role="group" aria-label="Quick stake amounts">

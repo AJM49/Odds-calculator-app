@@ -70,6 +70,8 @@ auth.onAuthStateChanged(user => {
 
   startBetHistoryTracking(user.uid);
 
+  refreshBankrollDisplay();
+
 });
 
 /* ------------------------------------
@@ -503,40 +505,71 @@ if (submitBetBtn) {
 
     const outcome = winner ? "win" : "lose";
 
+    if (!BK) {
+      setResultMessage("Bankroll helpers failed to load. Reload the page and try again.");
+      return;
+    }
+
+    const betData = {
+
+      userId: user.uid,
+
+      trackName: trackName,
+      horseName: horseName,
+      raceNumber: raceNumber,
+
+      betType: betType,
+
+      betAmount: betAmount,
+      odds: odds,
+
+      payout: payout,
+      winnings: winnings,
+
+      outcome: outcome,
+      // Phase 2-lite: false until Settle Bets confirms the real result.
+      settled: false,
+
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAtMs: Date.now()
+
+    };
+
     try {
 
-      await db.collection("bets").add({
+      // Atomically deducts the stake from the virtual bankroll and writes
+      // the bet. Throws INSUFFICIENT_BANKROLL when the stake exceeds it.
+      const { betId } = await BK.placeBet(db, user.uid, betData);
 
-        userId: user.uid,
+      // A manually marked winner is graded immediately, so its estimated
+      // winnings credit now (settleCredit is a no-op if already credited).
+      if (winner && payout > 0) {
+        await BK.settleCredit(db, user.uid, betId, payout);
+      }
 
-        trackName: trackName,
-        horseName: horseName,
-        raceNumber: raceNumber,
+      await refreshBankrollDisplay();
 
-        betType: betType,
-
-        betAmount: betAmount,
-        odds: odds,
-
-        payout: payout,
-        winnings: winnings,
-
-        outcome: outcome,
-        // Phase 2-lite: false until Settle Bets confirms the real result.
-        settled: false,
-
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        createdAtMs: Date.now()
-
-      });
-
-      setResultMessage("Bet saved.");
+      const balanceText = bankrollBalanceEl ? bankrollBalanceEl.textContent : "";
+      setResultMessage(`Bet saved. ${balanceText} left in your virtual bankroll.`);
 
       loadBetHistory();
 
     } catch (error) {
 
       console.error(error);
+
+      if (error && error.message === "INSUFFICIENT_BANKROLL") {
+        let balanceText = "your virtual bankroll";
+        try {
+          const data = await BK.ensureBankroll(db, user.uid);
+          balanceText = BK.formatMoney(data.balance);
+          if (bankrollBalanceEl) bankrollBalanceEl.textContent = balanceText;
+        } catch (_) {
+          // Keep the generic wording if the re-read fails.
+        }
+        alert(`That stake (${BK.formatMoney(betAmount)}) is more than ${balanceText} in your virtual bankroll. Lower the stake, or reset your bankroll on the dashboard.`);
+        return;
+      }
 
       setResultMessage("Error saving bet.");
 
@@ -981,6 +1014,17 @@ async function settleBets() {
             settledAtMs: Date.now(),
             settledPosition: settled.position,
           });
+          // Virtual bankroll: credit winnings exactly once. No-op for bets
+          // placed before the feature and for re-runs (guarded by the
+          // bankrollCredited flag inside settleCredit).
+          if (BK) {
+            try {
+              await BK.settleCredit(db, user.uid, bet.id, winnings);
+            } catch (bkErr) {
+              console.error(bkErr);
+              notes.push(`${bet.horseName} (${bet.trackName} R${bet.raceNumber}): settled, but the bankroll credit failed — check the dashboard`);
+            }
+          }
           settledCount += 1;
           notes.push(`${bet.horseName} (${bet.trackName} R${bet.raceNumber}): ${settled.note} → ${settled.outcome}`);
         } catch (err) {
@@ -993,6 +1037,7 @@ async function settleBets() {
     setSettleStatus(
       `Settled ${settledCount} bet(s) on ${dateStr}.` + (notes.length ? ` ${notes.join(" · ")}` : "")
     );
+    await refreshBankrollDisplay();
     loadBetHistory();
   } catch (err) {
     console.error(err);
@@ -1005,4 +1050,28 @@ async function settleBets() {
 defaultSettleDate();
 if (settleBetsBtn) {
   settleBetsBtn.addEventListener("click", settleBets);
+}
+
+/* ------------------------------------
+12. Virtual bankroll (paper betting)
+------------------------------------ */
+// $1,000 in virtual money per user. Stakes deduct when a bet is placed,
+// winnings credit when it settles. Fake money for learning — no real
+// money anywhere. All money movement goes through window.Bankroll so the
+// dashboard and the calculator share one implementation.
+
+const bankrollBalanceEl = document.getElementById("bankrollBalance");
+const BK = (typeof window !== "undefined" && window.Bankroll) || null;
+
+async function refreshBankrollDisplay() {
+  if (!bankrollBalanceEl || !BK) return;
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    const data = await BK.ensureBankroll(db, user.uid);
+    bankrollBalanceEl.textContent = BK.formatMoney(data.balance);
+  } catch (err) {
+    console.error(err);
+    bankrollBalanceEl.textContent = "—";
+  }
 }

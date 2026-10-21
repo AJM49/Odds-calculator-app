@@ -699,3 +699,18 @@ tbody tr:hover { background: rgba(255, 199, 0, 0.05); }
   font-size: 0.9rem;
   margin: 0 0 10px;
 }
+
+/* Virtual bankroll line in the bet card (Step 3). */
+.bankroll-line {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.bankroll-line strong {
+  color: var(--gold);
+  font-size: 1.1rem;
+}
+.bankroll-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+}

@@ -370,3 +370,20 @@ tbody tr:hover {
 .past-winners li span {
   opacity: 0.85;
 }
+
+/* Virtual bankroll panel. */
+.bankroll-card {
+  margin-top: 16px;
+}
+.bankroll-big {
+  margin: 8px 0 4px;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.bankroll-sub {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}

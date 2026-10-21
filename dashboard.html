@@ -58,6 +58,16 @@
       </div>
     </section>
 
+    <!-- Virtual bankroll: fake money for learning. Stakes deduct at placement, winnings credit at settlement. -->
+    <section class="table-card bankroll-card">
+      <div class="table-head">
+        <h2>Virtual Bankroll</h2>
+        <button id="resetBankrollBtn" type="button">Reset to $1,000</button>
+      </div>
+      <p id="bankrollBalanceBig" class="bankroll-big">$1,000.00</p>
+      <p id="bankrollSub" class="bankroll-sub">Profit/loss: +$0.00 · fake money for learning</p>
+    </section>
+
     <!-- Race Detail: full provider fields for the last race opened on Today's Card -->
     <section class="table-card race-detail-card">
       <div class="table-head">
@@ -122,6 +132,7 @@
   </script>
 
   <!-- Dashboard Logic -->
+  <script src="bankroll.js"></script>
   <script src="dashboard.js"></script>
 
   <!-- Race Detail panel (reads last race from Today's Card; shares helpers) -->
